@@ -33,6 +33,7 @@ import sys  # to get file system encoding
 import psychopy.iohub as io
 from psychopy.hardware import keyboard
 import pandas as pd
+
 # Run 'Before Experiment' code from code
 #PREWRITTEN CODE
 # Ensure that relative paths start from the same directory as this script
@@ -57,6 +58,7 @@ ypos2 = 0
 Order = 0
 ypos = 0
 ClickVariable = 0
+ComIntTF = False 
 #Initalize timers
 DROTimer = core.Clock()
 FITimer = core.Clock()
@@ -159,14 +161,19 @@ def EachFrameChecker(Stage):
     if Phase == "Intervention" and Stage == "Button" and Reinforcement_Schedule == "DRO":
         #Checks to see if DRO timer has hit 3 seconds
         if DROTimer.getTime() > Reinforcement_Variable:
-            
+            global ComIntTF
+            if ComIntTF == True:
+                ComINTstr = " ComINTerror"
+            else:
+                ComINTstr = ""
+            ComIntTF = False
             DROTimer.reset()
             #Calculates if an omission error has happened or not.
             #random() returns a random number inbetween 0 and 1.
             numb = random()*100
             
             if numb <= Omission_Integrity:
-                PointEarned("DRO",PTime, RTime)
+                PointEarned("DRO" + ComINTstr,PTime, RTime)
             else: 
                 OmissionErrorNoClick(PTime,RTime)
         return
@@ -174,9 +181,9 @@ def OmissionErrorNoClick(PTime,RTime):
     TimeStampData(RawData,PTime,RTime)
     RawData.addData("DataType", "DRO Omission Error")
     RawData.nextEntry()
-def ComINTError(PTime,RTime):
+def ComINTError(PTime,RTime,message):
     TimeStampData(RawData,PTime,RTime)
-    RawData.addData("DataType", "DRO ComINT Error")
+    RawData.addData("DataType", message)
     RawData.nextEntry()
 #def TakeIntervalData(PTime,RTime):
         #global ClickIntCounter
@@ -228,7 +235,7 @@ def MouseClicked():
     global ClickPhaseCounter
     ClickIntCounter += 1
     ClickPhaseCounter += 1
-   
+    global ComIntTF
     if MouseTimer.getTime() > 0.3:
         MouseTimer.reset()
         Earned = False
@@ -261,11 +268,16 @@ def MouseClicked():
        
         
         if Phase == "Intervention" and Reinforcement_Schedule == "DRO":
-            numb = 100*random()
-            if numb <= ComINT:
-                DROTimer.reset()
+            
+            if ComIntTF == True:
+                ComINTError(PTime,RTime, "ComINTError continued")
             else:
-                ComINTError(PTime,RTime)
+                numb = 100*random()
+                if numb <= ComINT:
+                    DROTimer.reset()
+                else:
+                    ComINTError(PTime,RTime, "ComINTError")
+                    ComIntTF = True
             num = random()*100
             
             if num > Comission_Integrity:

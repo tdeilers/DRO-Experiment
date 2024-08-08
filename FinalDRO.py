@@ -19,6 +19,8 @@ plugins.activatePlugins()
 prefs.hardware['audioLib'] = 'ptb'
 prefs.hardware['audioLatencyMode'] = '3'
 from psychopy import sound, gui, visual, core, data, event, logging, clock, colors, layout
+from psychopy.visual.shape import ShapeStim
+
 from psychopy.tools import environmenttools
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER)
@@ -34,6 +36,15 @@ import psychopy.iohub as io
 from psychopy.hardware import keyboard
 import pandas as pd
 
+import sys
+import os
+
+
+
+        
+   
+
+
 # Run 'Before Experiment' code from code
 #PREWRITTEN CODE
 # Ensure that relative paths start from the same directory as this script
@@ -48,6 +59,43 @@ expInfo = {
 }
 #DROBError, BE stands for Both Error (so combined error).
 
+
+class TimedShapeStim(ShapeStim):
+    def __init__(self,btnnum, win,name,size, vertices,ori,pos,anchor,lineWidth, colorSpace, opacity,depth, interpolate, fillColor='white', lineColor='black'):
+        # Initialize the parent class (ShapeStim)
+        super(TimedShapeStim, self).__init__(
+            win=win,
+            vertices=vertices,
+            fillColor=fillColor,
+            lineColor=lineColor,
+            name = name,
+            size = size,
+            ori = ori,
+            pos = pos,
+            anchor = anchor,
+            lineWidth = lineWidth,
+            colorSpace = colorSpace,
+            opacity = opacity,
+            depth = depth,
+            interpolate = interpolate,
+            
+        )
+        # Initialize the timer
+        self.timer = core.Clock()
+        self.timer.addTime(0)
+        self.FITimer = core.Clock()
+        self.timer.addTime(0)
+        self.FRCounter = 0
+        self.DROTimer = core.Clock()
+        self.DROTimer.addTime(0)
+        self.contig = []
+        self.ComIntTF = False
+        self.VInum = -1
+        self.VRnum = -1
+        self.FTTimer = core.Clock()
+        self.FTTimer.addTime(0)
+        self.btnnum = btnnum
+
 mySound = sound.Sound("Point.wav")
 
 Duration = 1
@@ -58,12 +106,8 @@ ypos2 = 0
 Order = 0
 ypos = 0
 ClickVariable = 0
-ComIntTF = False 
 #Initalize timers
-DROTimer = core.Clock()
-FITimer = core.Clock()
-FITimer.addTime(0)
-DROTimer.addTime(0)
+
 
 #Keeps track of how long current phase has been going
 PhaseTimer = core.Clock()
@@ -72,26 +116,33 @@ PhaseTimer.addTime(0)
 PointTimer = core.Clock()
 PointTimer.addTime(0)
 #keeps track of when last button click was
+
+#Keeps track of total runtime
 MouseTimer = core.Clock()
 MouseTimer.addTime(0)
-#Keeps track of total runtime
 RunTimer = core.Clock()
 RunTimer.addTime(0)
 BreakPauseTime = 0 
 PointBoxColor = 0
-CircleOn = 1
-RedCircleOn = 1
+
 newPhase = True
 #Initialize txtboxes
 routineended = False
 timertxt = "DROTimer"
 pointstxt = "Points: 0"
-FITimertxt = "FITimer"
+
 points = 0
 #Points Data, takes data everytime a point happens
 IDstr = expInfo['participant']
 filename = _thisDir + os.sep + u'participantdata/' + IDstr + '/'
+def setup_logging(log_folder):
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+    log_file = os.path.join(log_folder, 'error'+IDstr+'.log')
+    sys.stderr = open(log_file, 'w')
 
+# Set up logging to a specific folder
+setup_logging('logs')
 
 #Interval Data, takes data on clicks and points every 60 seconds happens, will need to be made to sync up with phases starting and stopping
 #interval = data.ExperimentHandler(name='DROIntegrity', dataFileName=filename + 'IntervalData')
@@ -109,13 +160,28 @@ PointIntCounter = 0
 ClickIntCounter = 0
 PointPhaseCounter = 0
 ClickPhaseCounter = 0
+#This section below will initialize excel forms and put things into a class:
+buttonlist = []
+contdoc = pd.read_excel("contigency.xlsx",sheet_name="Contigency")
+btndoc = pd.read_excel("contigency.xlsx", sheet_name="Buttons")
+cont = contdoc.to_dict(orient='list')
+print(cont)
+btn = btndoc.to_dict(orient='list')
+print(btn)
+#What is going on here is that we are creating lists, for
+
+
 
 #Initialize Functions
-
 #This resets timers inbetween phases.
+#print(contdoc.to_dict(orient='list'))
+
+
+
+
+
 def ResetAllTimers():
-    FITimer.reset()
-    DROTimer.reset()
+    
    
     PhaseTimer.reset()
 
@@ -132,59 +198,114 @@ def ResetAllTimers():
 #as a decimal inbetween 0 and 1. 1 being 100% integrity, and
 #.8 being 80% integrity.
 
-def EachFrameChecker(Stage):
-    global CircleOn
-    global RedCircleOn
+def EachFrameChecker():
+    
     RTime = RunTimer.getTime()
     PTime = PhaseTimer.getTime()
     
-    #Changes botton opacity, turning them off during breaks
-    if Phase == "Break":
-        CircleOn = 0
-        RedCircleOn = 0
-    #turns them back on after 0.3 second blink from click
-    elif MouseTimer.getTime() > 0.3:
-        CircleOn = 1
-        #only turns red on during reinforcer assessment
-        if Phase == "Assessment":
-            RedCircleOn = 1
-        else: 
-            RedCircleOn = 0
-    else:
-        CircleOn = 0
-        RedCircleOn = 0
-    #manages the color of the point box, canges it back to grey after 0.8 seconds. 
+    #manages the color of the point box, canges it back to grey after 0.8 seconds.
     if PointTimer.getTime() > 0.8:
         global PointBoxColor
         PointBoxColor = 0
+    #Changes botton opacity, turning them off during breaks
+   
+    if PhaseName == "Break":
+        for i in buttonlist:
+            i.opacity = 0
+    #turns them back on after 0.3 second blink from click
+    else:
+   
+   
+    #Putting this here for now, one way to have list of contingencies accessible
+#    CurContList = []
+#    CurContList.append(Black_Circle.split(","))
+#    CurContList.append(Red_Circle.split(","))
     
-    if Phase == "Intervention" and Stage == "Button" and Reinforcement_Schedule == "DRO":
-        #Checks to see if DRO timer has hit 3 seconds
-        if DROTimer.getTime() > Reinforcement_Variable:
-            global ComIntTF
-            if ComIntTF == True:
-                ComINTstr = " ComINTerror"
-            else:
-                ComINTstr = ""
-            ComIntTF = False
-            DROTimer.reset()
-            #Calculates if an omission error has happened or not.
-            #random() returns a random number inbetween 0 and 1.
-            numb = random()*100
+    
+        btncounter = 0
+        for i in buttonlist:
             
-            if numb <= Omission_Integrity:
-                PointEarned("DRO" + ComINTstr,PTime, RTime)
+        #this code, i can't believe it works. let's figure out how!
+        #create blank lists for Reinforcmenet Schedules, Omission Integerity, Reinforcement Variables, and Points!
+            btncounter += 1
+            reinsched = []
+        
+            OmisInteg = []
+
+            ReinVar = []
+            Pnts = []
+        #What is this! WHAT IS THIS!
+        #Oh I know, Red_Circle and Black_Circle are contingency variables, this means that they are collecting the contingency (or conI as in i's contiengencies)
+        #we change it to a str, split it, then (thought continued below)
+            
+
+            if btncounter == 1:
+                conI = str(Button_1).split(" ")
+            if btncounter == 2:
+                conI = str(Button_2).split(" ")
+            if btncounter == 3:
+                conI = str(Button_3).split(" ")
+            if btncounter == 4:
+                conI = str(Button_4).split(" ")
+            if btncounter == 5:
+                conI = str(Button_5).split(" ")
+            
+        #we change the contigency signifiers back to integers, to be used as indexes so that we can put all of the contigency information back into speciic variable lists (am I sure this is the best way to go about this??)
+        #
+            if conI != ["None"] and MouseTimer.getTime() > 0.3:
+                i.opacity = 1
             else: 
-                OmissionErrorNoClick(PTime,RTime)
-        return
+                i.opacity = 0
+            if conI != ['None']:
+                for y in range(len(conI)):
+                    
+                    conI[y] = int(conI[y])
+                for y in conI:
+                    reinsched.append(cont["Reinforcement_Schedule"][y-1])
+                    OmisInteg.append(cont["Omission_Integrity"][y-1])
+                    ReinVar.append(cont["Reinforcement_Variable"][y-1])
+                    Pnts.append(cont["Points"][y-1])
+            
+        #Now, we just check to see if DRO is one of the schedules (yeah there has got to be a better way), though I do thing the "DRO" in reinshched is really fun way to do this. 
+        
+            if "DRO" in reinsched:
+                index = reinsched.index("DRO")
+                
+                
+            #Checks to see if DRO timer has hit 3 seconds
+                
+                if i.DROTimer.getTime() > ReinVar[index]:
+                    i.DROTimer.reset() 
+
+                    if i.ComIntTF == True:
+                        ComINTstr = " ComINTerror"
+                    else:
+                        ComINTstr = ""
+                    
+                    i.ComIntTF = False
+                #Calculates if an omission error has happened or not.
+                #returns a random number inbetween 0 and 1.
+                    numb = random()*100
+
+                    if numb <= OmisInteg[index]:
+                        PointEarned("DRO" + ComINTstr,Pnts[index],PTime, RTime)
+                    else: 
+                        OmissionErrorNoClick(PTime,RTime)
+            if "FT" in reinsched:
+                index = reinsched.index("FT")
+                if i.FTTimer.getTime() > ReinVar(index):
+                    i.FTTimer.reset()
+
+                    PointEarned("FT", Pnts[index],PTime,RTime)
+
+    return
+    
 def OmissionErrorNoClick(PTime,RTime):
     TimeStampData(RawData,PTime,RTime)
     RawData.addData("DataType", "DRO Omission Error")
     RawData.nextEntry()
-def ComINTError(PTime,RTime,message):
-    TimeStampData(RawData,PTime,RTime)
-    RawData.addData("DataType", message)
-    RawData.nextEntry()
+
+
 #def TakeIntervalData(PTime,RTime):
         #global ClickIntCounter
         #global PointIntCounter
@@ -207,121 +328,165 @@ def BreakClick():
     if PhaseTimer.getTime() > 5: 
         RTime = RunTimer.getTime()
         PTime = PhaseTimer.getTime()
+        
         TimeStampData(RawData,PTime,RTime)
         RawData.addData('DataType', "PhaseChange")
         RawData.nextEntry()
         RunTimer.reset(-1*BreakPauseTime)
         ResetAllTimers()
         return True
-def RedClicked():
-    if MouseTimer.getTime() > 0.3:
-        MouseTimer.reset()
-        RTime = RunTimer.getTime()
-        PTime = PhaseTimer.getTime()
-        newButtonPosition()
-        TimeStampData(click,PTime,RTime)
-        click.addData('Point earned?', "N/A")
-        click.addData('Point Type', "N/A")
-        click.addData('Target Type', "Red")
-        
-        click.nextEntry()
-        
-        TimeStampData(RawData, PTime, RTime)
-        RawData.addData('DataType', 'RedClick')
-        RawData.addData('totalpoints', points)
-        RawData.nextEntry()
-def MouseClicked():
+
+def MouseClicked(button):
     global ClickIntCounter
     global ClickPhaseCounter
     ClickIntCounter += 1
     ClickPhaseCounter += 1
-    global ComIntTF
-    if MouseTimer.getTime() > 0.3:
-        MouseTimer.reset()
+    if button.name == "Circle1":
+        conI = str(Button_1).split(" ")
+    elif button.name == "Circle2":
+        conI = str(Button_2).split(" ")
+    elif button.name == "Circle3":
+        conI = str(Button_3).split(" ")
+    elif button.name == "Circle4":
+        conI = str(Button_4).split(" ")
+    elif button.name == "Circle5":
+        conI = str(Button_5).split(" ")
+    
+    reinsched = []
+    ComInteg = []
+
+    ComInter = []
+    ReinVar = []
+    Pnts = []
+    VarMin = []
+    VarMax = []
+    if conI != ['None']:
+        for i in range(len(conI)):
+            conI[i] = int(conI[i])
+        for i in conI:
+            reinsched.append(cont["Reinforcement_Schedule"][i-1])
+            ComInteg.append(cont["Comission_Integrity"][i-1])
+        
+            ComInter.append(cont["ComInt"][i-1])
+            ReinVar.append(cont["Reinforcement_Variable"][i-1])
+            Pnts.append(cont["Points"][i-1])
+            VarMin.append(cont["VariableMin"][i-1])
+            VarMax.append(cont["VariableMax"][i-1])
+            
+
+
+    
+
+    if button.timer.getTime() > 0.3:
+        button.timer.reset()
         Earned = False
         PointType = "N/A"
-
+        
         RTime = RunTimer.getTime()
         PTime = PhaseTimer.getTime()
-
-        newButtonPosition()
-        if Phase == "BL" or Phase == "Assessment":
-            if Reinforcement_Schedule == "FI":
-                if FITimer.getTime() > Reinforcement_Variable:
-           
+        
+        newButtonPosition(0, [])
+       
+        
+        if "FI" in reinsched:
+            index = reinsched.index("FI")
+            if button.FITimer.getTime() > ReinVar[index]:
                     #HAVE TO GO HERE AND ADD PTIME RTIME
-                    PointEarned("FI " + str(Reinforcement_Variable) + " Button Click",PTime,RTime)
-                    PointType = "FI " + str(Reinforcement_Variable)
+                    PointEarned("FI " + str(ReinVar[index]) + " Button Click", Pnts[index],PTime,RTime)
+                    PointType = "FI " + str(ReinVar[index])
                     Earned = True
                     #Resets timer FI timer whenever it 
                     #is clicked above 3 seconds
-                    FITimer.reset()
-            if Reinforcement_Schedule == "FI":
-                global ClickVariable
-                ClickVariable += 1 
-                if ClickVariable >= Reinforcement_Variable:
-                    PointEarned("FR " + str(Reinforcement_Variable) + "Button Click", PTime,RTime)
-                    PointType = "FI " + str(Reinforcement_Variable)
-
-                    Earned = True
-                    ClickVariable = 0 
-       
-        
-        if Phase == "Intervention" and Reinforcement_Schedule == "DRO":
+                    button.FITimer.reset()
+        if "VI" in reinsched:
+            index = reinsched.index("VI")
+            if button.VInum == -1:
+                button.VInum = ((VarMax[index]-VarMin[index])*random()) + VarMin[index]
+            if button.FITimer.getTime() > button.VInum:
+                PointEarned("VI " + str(button.VInum) + " Button Click", Pnts[index],PTime,RTime)
+                PointType = "VI " + str(button.VInum)
+                Earned = True
+                button.FITimer.reset()
+                button.VInum = -1
             
-            if ComIntTF == True:
+        if "FR" in reinsched:
+            button.FRCounter += 1
+            index = reinsched.index("FR")
+            if button.FRCounter >= ReinVar[index]:
+                PointEarned("FR " + str(ReinVar[index]) + "Button Click", Pnts[index], PTime,RTime)
+                PointType = "FR " + str(ReinVar[index]) 
+                Earned = True
+                button.FrCounter = 0
+        if "VR" in reinsched:
+            button.FRCounter += 1
+            index = reinsched.index("VR")
+            if button.VRnum == -1:
+                button.VRnum == random.randint(VarMin[index],VarMax[index])
+            if button.FRCounter >= button.VRnum:
+                PointEarned("VR " + button.VRnum + "Button Click", Pnts[index], PTime,RTime)
+                PointType = "VR" + button.VRnum 
+                Earned = True
+                button.FrCounter = 0
+        if "DRO" in reinsched:
+            index = reinsched.index("DRO")
+
+            
+            if button.ComIntTF == True:
                 ComINTError(PTime,RTime, "ComINTError continued")
             else:
                 numb = 100*random()
-                if numb <= ComINT:
-                    DROTimer.reset()
+                if numb <= ComInter[index]:
+                    button.DROTimer.reset()
                 else:
                     ComINTError(PTime,RTime, "ComINTError")
-                    ComIntTF = True
-            num = random()*100
+                    button.ComIntTF = True
             
-            if num > Comission_Integrity:
-                PointEarned("Comission Error",PTime,RTime)
+
+            num = random()*100
+            if num > ComInteg[index]:
+                PointEarned("Comission Error", Pnts[index],PTime,RTime)
                 PointType = "Comission Error"
                 Earned = True
-            
+        
             
         TimeStampData(click,PTime,RTime)
         click.addData('Point earned?', Earned)
         click.addData('Point Type', PointType)
-        if Phase == "Assessment":
-            click.addData('Target Type', "Target")
+
+        click.addData('Target Type', button.name)
         click.nextEntry()
         if Earned != True:
             TimeStampData(RawData, PTime, RTime)
             RawData.addData('DataType', "Click")
             RawData.nextEntry()
+
+
         #Anytime button is clicked, DROTimer is reset
         #Right? Ask Paige
         
-    
     return
 
 #This is what is actualyl contorlling the expirement, but not for data purposes. 
+def ComINTError(PTime,RTime,message):
+    TimeStampData(RawData,PTime,RTime)
+    RawData.addData("DataType", message)
+    RawData.nextEntry()
 def RoutineEnder():
     #This ends routine
     
-    if PhaseTimer.getTime() > Duration and Phase != "Break":
+    if PhaseTimer.getTime() > Duration and PhaseName != "Break":
         global routineended
         #ends loop and routine if it is time to move on
         global PointPhaseCounter
         global ClickPhaseCounter
         RTime = RunTimer.getTime()
         PTime = PhaseTimer.getTime()
-        if Phase == "Assessment":
+        if Reset_PointsTF == True:
             global points
             global pointstxt
             points = 0
             pointstxt = "Points: " + str(points)
-        #TimeStampData(PhaseData,PTime,RTime)
-        #PhaseData.addData("PointsEarned", PointPhaseCounter)
-        #PhaseData.addData("Clicks", ClickPhaseCounter)
-        #PhaseData.nextEntry()
+     
         PointPhaseCounter = 0
         ClickPhaseCounter = 0
         TimeStampData(RawData,PTime,RTime)
@@ -337,84 +502,84 @@ def RoutineEnder():
         return True
     return False
 #makes new button position, will be called when clicks happen
-def newButtonPosition():
+def newButtonPosition(num,coords):
     
-    global xpos
-    global ypos
-    global xpos2
-    global ypos2
+    if num == len(buttonlist):
+        return
+    
     x = win.size[0]
     y = win.size[1]
 
-    xpos = random()*((x/y)-0.05) - ((x/y)/2) + 0.025
-    ypos = (random()*.8) - 0.45
-   
     
-    xpos2 = random()*((x/y)-0.05) - ((x/y)/2) + 0.025
-    ypos2 = (random()*.8) - 0.45
-    while ((xpos2 - xpos)**2 + (ypos2 - ypos)**2)**0.5 < 0.1:
-        xpos2 = random()*((x/y)-0.05) - ((x/y)/2) + 0.025
-        ypos2 = (random()*.8) - 0.45
-    
+    coordsfound = False
 
+    while coordsfound == False:
+        xpos = random()*((x/y)-0.05) - ((x/y)/2) + 0.025
+        ypos = (random()*.8) - 0.45
+        coordsfound = True
+        if num != 0:
+            for i in coords:
+            
+                if ((i[0] - xpos)**2 + (i[1] - ypos)**2)**0.5 < 0.1:
+                    coordsfound = False
+                    continue
+
+    
+    buttonlist[num].setPos((xpos,ypos),log=False)
+    coords.append([xpos,ypos])
+    return newButtonPosition(num+1,coords)
+        
+
+
+         
+
+    
+    #xpos2 = random()*((x/y)-0.05) - ((x/y)/2) + 0.025
+    #ypos2 = (random()*.8) - 0.45
+
+    # check for overlapping 
+    
+    #while ((xpos2 - xpos)**2 + (ypos2 - ypos)**2)**0.5 < 0.1:
+        #xpos2 = random()*((x/y)-0.05) - ((x/y)/2) + 0.025
+        #ypos2 = (random()*.8) - 0.45
+    
+    
+    
 #THIS IS CURRENTLY ONLY FOR DATA PURPOSES
 def TimeStampData(File,PTime,RTime):
     #RunTimer is not athing for wahtever reason, fix later
     File.addData('RunTime', RTime)
-    
-    CPhase = ""
-    if Phase == "BL":
-        CPhase = "BL"
-    elif Phase == "Break":
-        CPhase = "Break"
-    elif Phase == "Assessment":
-        CPhase = "Assessment"
-    elif Phase == "Intervention" and Reinforcement_Schedule == "DRO":
-        if Comission_Integrity != 100 and Omission_Integrity != 100:
-            CPhase = "Combined C" + str(Comission_Integrity) + "/O" + str(Omission_Integrity)
-        elif Comission_Integrity != 100:
-            CPhase = "DRO Commission " + str(Comission_Integrity)
-        elif Omission_Integrity != 100: 
-            CPhase = "DRO Omission " + str(Omission_Integrity)
-        else: CPhase = "Perfect DRO"
-        
-        if ComINT < 100: 
-            CPhase += " w/ ComINT " + str(ComINT)
-        
-
-        
-        
-        
-    File.addData('Current Phase', CPhase) 
+    File.addData('Current Phase', PhaseName) 
     File.addData('PhaseRuntime', PTime)
-    
-def PointEarned(Type,PTime,RTime):
+#def ButtonStampData(File,btninfo, cntinfo):
+    #File.addData('Button',btninfo)
+    #File.addData('Contingency',cntinfo)
+def PointEarned(Type,Value, PTime,RTime):
     global points
     global pointstxt
     global PointBoxColor
     global PointIntCounter
     global PointPhaseCounter
     global mySound
-    PointBoxColor =  0.9059
+    
     PointTimer.reset()
     mySound.stop()
     mySound.play() 
     PointIntCounter +=1
     PointPhaseCounter += 1
-    points += 1
+    Value = int(Value)
+    points += Value
     pointstxt = "Points: " + str(points)
     #adds data to points file
-    #TimeStampData(exp,PTime,RTime)
-    #exp.addData('totalpoints', points)
-    #exp.addData('ReasonPointEarned', Type)
    
     
     #exp.nextEntry()
     #adds data to raw file about points
     TimeStampData(RawData,PTime,RTime)
+    #ButtonStampData(btninfo,cntinfo)
     RawData.addData('DataType', "Point")
     RawData.addData('totalpoints', points)
-    RawData.addData('ReasonPointedEarned', Type)
+    RawData.addData('ReasonPointedEarned', Type + str(Value))
     RawData.nextEntry()
     
     return
@@ -490,18 +655,20 @@ x, y = [None, None]
 mouse.mouseClock = core.Clock() #368908
 
 # --- Initialize components for Routine "DRO" ---
-DROCircle = visual.ShapeStim(
-    win=win, name='DROCircle',
-    size=[1.0, 1.0], vertices='circle',
+
+
+for i in range(len(btn["Button"])):
+    buttonlist.append(TimedShapeStim(win=win, name='Circle'+str(i+1),
+    size=[btn["Radius"][i],btn["Radius"][i]], vertices=btn["Shape"][i],
     ori=0.0, pos=[0,0], anchor='center',
-    lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor='black',
-    opacity=1.0, depth=0.0, interpolate=True)
-RedCircle = visual.ShapeStim(
-    win=win, name='RedCircle',
-    size=[1.0, 1.0], vertices='circle',
-    ori=0.0, pos=[0,0], anchor='center',
-    lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor=[1.0000, -1.0000, -1.0000],
-    opacity=1.0, depth=-1.0, interpolate=True)
+    lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor=btn["Color"][i],
+    opacity=1.0, depth=0.0, interpolate=True,btnnum = i+1))
+newButtonPosition(0,[])
+#This manual code works
+# RedCircle.fillColor = btn["Color"][0]
+#BlackCircle.fillColor = btn["Color"][1]
+
+
 DROMouse = event.Mouse(win=win)
 x, y = [None, None]
 DROMouse.mouseClock = core.Clock()
@@ -518,7 +685,7 @@ PointsBox = visual.Rect(
     win=win, name='PointsBox',
     width=(2, 0.1)[0], height=(2, 0.1)[1],
     ori=0.0, pos=(0, 0.45), anchor='center',
-    lineWidth=1.0,     colorSpace='rgb',  lineColor=[-1.0000, -1.0000, -1.0000], fillColor='white',
+    lineWidth=1.0,     colorSpace='rgb',  lineColor=[-1.0000, -1.0000, -1.0000], fillColor='Black',
     opacity=None, depth=-3.0, interpolate=True)
 DROPoints = visual.TextStim(win=win, name='DROPoints',
     text='',
@@ -612,6 +779,7 @@ while continueRoutine:
         pass
     # *mouse* updates
     
+    
     # if mouse is starting this frame...
     if mouse.status == NOT_STARTED and t >= 0.0-frameTolerance:
         # keep track of start time/frame for later
@@ -668,7 +836,7 @@ while continueRoutine:
     # refresh the screen
     if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
         win.flip()
-
+        
 # --- Ending Routine "Initalize" ---
 for thisComponent in InitalizeComponents:
     if hasattr(thisComponent, "setAutoDraw"):
@@ -711,8 +879,7 @@ for thisPhaseSelector in PhaseSelector:
     # --- Prepare to start Routine "DRO" ---
     continueRoutine = True
     # update component parameters for each repeat
-    DROCircle.setSize((0.1, 0.1))
-    RedCircle.setSize((0.1,0.1))
+    
     # setup some python lists for storing info about the DROMouse
     DROMouse.x = []
     DROMouse.y = []
@@ -724,14 +891,14 @@ for thisPhaseSelector in PhaseSelector:
     DROMouse.clicked_name = []
     gotValidClick = False  # until a click is received
     # Run 'Begin Routine' code from DROCode
-    if Phase == "Break":
+    if PhaseName == "Break":
         BreakPauseTime = RunTimer.getTime()
-    if Order == 1:
-        RunTimer.reset()
-        ResetAllTimers()
+    for i in buttonlist:
+        pass
+        
     # keep track of which components have finished
-    DROComponents = [DROCircle, DROMouse, PointsBox, DROPoints, BreakTxt, BreakButton]
-    for thisComponent in DROComponents:
+    DROComponents = [DROMouse, PointsBox, DROPoints, BreakTxt, BreakButton]
+    for thisComponent in DROComponents or thisComponent in buttonlist:
         thisComponent.tStart = None
         thisComponent.tStop = None
         thisComponent.tStartRefresh = None
@@ -754,48 +921,32 @@ for thisPhaseSelector in PhaseSelector:
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
         
-        # *DROCircle* updates
+        # *BlackCircle* updates
         
-        # if DROCircle is starting this frame...
-        if DROCircle.status == NOT_STARTED and frameN >= 0:
-            # keep track of start time/frame for later
-            DROCircle.frameNStart = frameN  # exact frame index
-            DROCircle.tStart = t  # local t and not account for scr refresh
-            DROCircle.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(DROCircle, 'tStartRefresh')  # time at next scr refresh
-            # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'DROCircle.started')
-            # update status
-            DROCircle.status = STARTED
-            DROCircle.setAutoDraw(True)
+        # if BlackCircle is starting this frame...
+        for i in buttonlist:
+            if i.status == NOT_STARTED and frameN >= 0:
+                # keep track of start time/frame for later
+                i.frameNStart = frameN  # exact frame index
+                i.tStart = t  # local t and not account for scr refresh
+                i.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(i, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, '.started')
+                # update status
+                i.status = STARTED
+                i.setAutoDraw(True)
         
-        # if DROCircle is active this frame...
-        if DROCircle.status == STARTED:
-            # update params
-            DROCircle.setOpacity(CircleOn, log=False)
-            DROCircle.setPos((xpos, ypos), log=False)
-            DROCircle.setLineColor([0.0000, 0.0000, 0.0000], log=False)
+            # if BlackCircle is active this frame...
+            if i.status == STARTED:
+                # update params
+               
+                
+                
+                i.setLineColor([0.0000, 0.0000, 0.0000], log=False)
          # *RedCircle* updates
         
-        # if RedCircle is starting this frame...
-        if RedCircle.status == NOT_STARTED and frameN >= 0:
-            # keep track of start time/frame for later
-            RedCircle.frameNStart = frameN  # exact frame index
-            RedCircle.tStart = t  # local t and not account for scr refresh
-            RedCircle.tStartRefresh = tThisFlipGlobal  # on global time
-            win.timeOnFlip(RedCircle, 'tStartRefresh')  # time at next scr refresh
-            # add timestamp to datafile
-            thisExp.timestampOnFlip(win, 'RedCircle.started')
-            # update status
-            RedCircle.status = STARTED
-            RedCircle.setAutoDraw(True)
-        
-        # if RedCircle is active this frame...
-        if RedCircle.status == STARTED:
-            # update params
-            RedCircle.setOpacity(RedCircleOn, log=False)
-            RedCircle.setPos((xpos2, ypos2), log=False)
-            RedCircle.setLineColor([0.0000, 0.0000, 0.0000], log=False)
+       
         # *DROMouse* updates
         # *DROMouse* updates
         
@@ -818,7 +969,8 @@ for thisPhaseSelector in PhaseSelector:
                 if sum(buttons) > 0:  # state changed to a new click
                     # check if the mouse was inside our 'clickable' objects
                     gotValidClidck = False
-                    clickableList = environmenttools.getFromNames([DROCircle, RedCircle, BreakButton], namespace=locals())
+                    clickableList = environmenttools.getFromNames([BreakButton], namespace=locals())
+                    clickableList.extend(buttonlist)
                     for obj in clickableList:
                         # is this object clicked on?
                         if obj.contains(DROMouse):
@@ -826,20 +978,23 @@ for thisPhaseSelector in PhaseSelector:
                             DROMouse.clicked_name.append(obj.name)
                             ###This part of the code calls functions depending on the current phase for clicks,
                             #Mouse click for phases that aren't break, which gets points (sometimes)
-                            if Phase != "Break" and obj == DROCircle:
-                                MouseClicked()
+                            
+                               
                             #should end routine if they clikc on the break button, and resume program
-                            if Phase == "Break" and obj == BreakButton:
+                            if PhaseName == "Break" and obj == BreakButton:
                                 if BreakClick() == True:
                                     continueRoutine = False
-                            #This happens if the red butotn is clicked during assesmnet phsae
-                            if Phase == "Assessment" and obj == RedCircle:
-                                RedClicked()
+                            elif PhaseName != "Break" and obj != BreakButton:
+                                MouseClicked(obj)
+                            #This happens if the red butotn is clicked during assesmnet phsa
                     # check whether click was in correct object
                     if gotValidClick:
                         corr = 0
-                        corrAns = environmenttools.getFromNames([DROCircle,RedCircle, BreakButton], namespace=locals())
-                        for obj in corrAns:
+                        #corrAns = environmenttools.getFromNames([BlackCircle,RedCircle, BreakButton], namespace=locals())
+                        #just changed this
+                        corrAns = buttonlist
+                        
+                        for obj in corrAns or obj == BreakButton:
                             # is this object clicked on?
                             if obj.contains(DROMouse):
                                 corr = 1
@@ -854,8 +1009,7 @@ for thisPhaseSelector in PhaseSelector:
                     DROMouse.time.append(globalClock.getTime())
         # Run 'Each Frame' code from DROCode
         
-        timertxt = "DRO Timer: " + str(DROTimer.getTime())
-        FITimertxt = "FI Timer: " + str(FITimer.getTime())
+      
         
     
         
@@ -870,7 +1024,7 @@ for thisPhaseSelector in PhaseSelector:
                 continueRoutine = False
         else:
             continueRoutine = False
-        EachFrameChecker("Button")
+        EachFrameChecker()
      
         
         
@@ -895,8 +1049,19 @@ for thisPhaseSelector in PhaseSelector:
         # if PointsBox is active this frame...
         if PointsBox.status == STARTED:
             # update params
-            PointsBox.setFillColor([0.0000, PointBoxColor, 0.0000], log=False)
-        
+            
+            if BackgroundColor is None:
+                win.color = [0,0,0]
+                if PointTimer.getTime() < 0.8:
+                    PointsBox.setFillColor([0.0000, 0.9059, 0.0000], log=False)
+                else:
+                    PointsBox.setFillColor([0.0000,0.0000,0.0000], log=False)
+            else:
+                win.color = BackgroundColor
+                if PointTimer.getTime() < 0.8:
+                    PointsBox.setFillColor([0.0000, 0.9059, 0.0000], log=False)
+                else:
+                    PointsBox.setFillColor(BackgroundColor, log=False)
         # *DROPoints* updates
         
         # if DROPoints is starting this frame...
@@ -920,7 +1085,7 @@ for thisPhaseSelector in PhaseSelector:
         # *BreakTxt* updates
         
         # if BreakTxt is starting this frame...
-        if BreakTxt.status == NOT_STARTED and Phase == "Break":
+        if BreakTxt.status == NOT_STARTED and PhaseName == "Break":
             # keep track of start time/frame for later
             BreakTxt.frameNStart = frameN  # exact frame index
             BreakTxt.tStart = t  # local t and not account for scr refresh
@@ -945,7 +1110,7 @@ for thisPhaseSelector in PhaseSelector:
         # *BreakButton* updates
         
         # if BreakButton is starting this frame...
-        if BreakButton.status == NOT_STARTED and Phase == "Break" and PhaseTimer.getTime() >= 2:
+        if BreakButton.status == NOT_STARTED and PhaseName == "Break" and PhaseTimer.getTime() >= 2:
             # keep track of start time/frame for later
             BreakButton.frameNStart = frameN  # exact frame index
             BreakButton.tStart = t  # local t and not account for scr refresh

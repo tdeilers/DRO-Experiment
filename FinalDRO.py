@@ -93,6 +93,14 @@ IDstr = expInfo['participant']
 filename = _thisDir + os.sep + u'participantdata/' + IDstr + '/'
 
 
+def setup_logging(log_folder):
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+    log_file = os.path.join(log_folder, 'error'+IDstr+'.log')
+    sys.stderr = open(log_file, 'w')
+
+# Set up logging to a specific folder
+setup_logging('logs')
 #Interval Data, takes data on clicks and points every 60 seconds happens, will need to be made to sync up with phases starting and stopping
 #interval = data.ExperimentHandler(name='DROIntegrity', dataFileName=filename + 'IntervalData')
 #Phase Data, takes data everytime a click or a point happens in each phase
@@ -116,7 +124,7 @@ ClickPhaseCounter = 0
 def ResetAllTimers():
     FITimer.reset()
     DROTimer.reset()
-   
+    
     PhaseTimer.reset()
 
     return
@@ -202,6 +210,7 @@ def ComINTError(PTime,RTime,message):
 #This function should be called anytime the button is clicked
 #It will be called in the "Mouse Clicked" routines
 #Integrity numbers are same as above
+
 def BreakClick():
     global BreakPauseTime
     if PhaseTimer.getTime() > 5: 
@@ -256,7 +265,7 @@ def MouseClicked():
                     #Resets timer FI timer whenever it 
                     #is clicked above 3 seconds
                     FITimer.reset()
-            if Reinforcement_Schedule == "FI":
+            if Reinforcement_Schedule == "FR":
                 global ClickVariable
                 ClickVariable += 1 
                 if ClickVariable >= Reinforcement_Variable:
@@ -284,7 +293,7 @@ def MouseClicked():
                 PointEarned("Comission Error",PTime,RTime)
                 PointType = "Comission Error"
                 Earned = True
-            
+                
             
         TimeStampData(click,PTime,RTime)
         click.addData('Point earned?', Earned)

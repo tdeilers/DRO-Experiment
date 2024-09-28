@@ -41,10 +41,6 @@ import os
 
 
 
-        
-   
-
-
 # Run 'Before Experiment' code from code
 #PREWRITTEN CODE
 # Ensure that relative paths start from the same directory as this script
@@ -58,6 +54,13 @@ expInfo = {
     'session': '001',
 }
 #DROBError, BE stands for Both Error (so combined error).
+#   Created 8-09-2011
+#   Ricky Savjani
+#   (savjani at bcm.edu)
+
+#import necessary packages
+from distutils.core import setup
+import os
 
 
 class TimedShapeStim(ShapeStim):
@@ -78,6 +81,7 @@ class TimedShapeStim(ShapeStim):
             opacity = opacity,
             depth = depth,
             interpolate = interpolate,
+            
             
         )
         # Initialize the timer
@@ -178,7 +182,10 @@ print(btn)
 
 
 
-
+def ResetRunTimer():
+    RunTimer.reset()
+    PhaseTimer.reset()
+    return
 
 def ResetAllTimers():
     
@@ -211,6 +218,7 @@ def EachFrameChecker():
    
     if PhaseName == "Break":
         for i in buttonlist:
+            
             i.opacity = 0
     #turns them back on after 0.3 second blink from click
     else:
@@ -240,23 +248,25 @@ def EachFrameChecker():
             
 
             if btncounter == 1:
-                conI = str(Button_1).split(" ")
+                
+                conI = str(Button_1)[2:].split(" ")
+                
             if btncounter == 2:
-                conI = str(Button_2).split(" ")
+                conI = str(Button_2)[2:].split(" ")
             if btncounter == 3:
-                conI = str(Button_3).split(" ")
+                conI = str(Button_3)[2:].split(" ")
             if btncounter == 4:
-                conI = str(Button_4).split(" ")
+                conI = str(Button_4)[2:].split(" ")
             if btncounter == 5:
-                conI = str(Button_5).split(" ")
+                conI = str(Button_5)[2:].split(" ")
             
         #we change the contigency signifiers back to integers, to be used as indexes so that we can put all of the contigency information back into speciic variable lists (am I sure this is the best way to go about this??)
         #
-            if conI != ["None"] and MouseTimer.getTime() > 0.3:
+            if conI != ["ne"] and MouseTimer.getTime() > 0.3:
                 i.opacity = 1
             else: 
                 i.opacity = 0
-            if conI != ['None']:
+            if conI != ["ne"]:
                 for y in range(len(conI)):
                     
                     conI[y] = int(conI[y])
@@ -342,15 +352,15 @@ def MouseClicked(button):
     ClickIntCounter += 1
     ClickPhaseCounter += 1
     if button.name == "Circle1":
-        conI = str(Button_1).split(" ")
+        conI = str(Button_1)[2:].split(" ")
     elif button.name == "Circle2":
-        conI = str(Button_2).split(" ")
+        conI = str(Button_2)[2:].split(" ")
     elif button.name == "Circle3":
-        conI = str(Button_3).split(" ")
+        conI = str(Button_3)[2:].split(" ")
     elif button.name == "Circle4":
-        conI = str(Button_4).split(" ")
+        conI = str(Button_4)[2:].split(" ")
     elif button.name == "Circle5":
-        conI = str(Button_5).split(" ")
+        conI = str(Button_5)[2:].split(" ")
     
     reinsched = []
     ComInteg = []
@@ -465,12 +475,54 @@ def MouseClicked(button):
         #Right? Ask Paige
         
     return
+#for i in range(len(btn["Button"])): buttonlist.append(TimedShapeStim(win=win, name='Circle'+str(i+1),
+    #size=[btn["Radius"][i],btn["Radius"][i]], vertices=btn["Shape"][i],
+    #ori=0.0, pos=[0,0], anchor='center',
+    #lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor=btn["Color"][i],
+    #opacity=1.0, depth=0.0, interpolate=True,btnnum = i+1))
+def BeginPhase():
+
+    if Button_1 != None:
+        idlist = str(Button_1).split("*")
+        i = int(idlist[0])
+        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
+        buttonlist[0].vertices = btn["Shape"][i-1]
+        buttonlist[0].fillColor = btn["Color"][i-1]
+    if Button_2 != None:
+        idlist = str(Button_2).split("*")
+        i = int(idlist[0])
+        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
+        buttonlist[0].vertices = btn["Shape"][i-1]
+        buttonlist[0].fillColor = btn["Color"][i-1]
+    if Button_3 != None:
+        idlist = str(Button_3).split("*")
+        i = int(idlist[0])
+        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
+        buttonlist[0].vertices = btn["Shape"][i-1]
+        buttonlist[0].fillColor = btn["Color"][i-1]
+    if Button_4 != None:
+        idlist = str(Button_4).split("*")
+        i = int(idlist[0])
+        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
+        buttonlist[0].vertices = btn["Shape"][i-1]
+        buttonlist[0].fillColor = btn["Color"][i-1]
+    if Button_5 != None:
+        idlist = str(Button_5).split("*")
+        i = int(idlist[0])
+        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
+        buttonlist[0].vertices = btn["Shape"][i-1]
+        buttonlist[0].fillColor = btn["Color"][i-1]
+    #if Button_2 != None:
+        # = Button_1.split("*")
+        
+
 
 #This is what is actualyl contorlling the expirement, but not for data purposes. 
 def ComINTError(PTime,RTime,message):
     TimeStampData(RawData,PTime,RTime)
     RawData.addData("DataType", message)
     RawData.nextEntry()
+
 def RoutineEnder():
     #This ends routine
     
@@ -644,7 +696,7 @@ defaultKeyboard = keyboard.Keyboard(backend='iohub')
 
 # --- Initialize components for Routine "Initalize" ---
 text = visual.TextStim(win=win, name='text',
-    text='Your goal is to earn as many points as possible. How you earn points may change throughout the experiment. All your points will be visible throughout the experiment at the top of the screen. You will be given optional 1-minute breaks every 5 minutes and a 10-minute break halfway through the experiment (after approximately 30 minutes).You may skip past the breaks by clicking the button that appears on the screen. You are competing with other people for the most points; the top three point-earners in the study will win an additional gift card. Do your best to earn the most points!  Click anywhere when you are ready and good luck',
+    text='Your goal is to earn as many points as possible. How you earn points may change throughout the experiment. All your points will be visible throughout the experiment at the top of the screen. Click anywhere when you are ready to begin.',
     font='Open Sans', 
     pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
     color='white', colorSpace='rgb', opacity=None, 
@@ -843,6 +895,7 @@ for thisComponent in InitalizeComponents:
         thisComponent.setAutoDraw(False)
 # Run 'End Routine' code from code
 ResetAllTimers()
+ResetRunTimer()
 #Not at all sure what run time is, or if its ever used, leaving in for now becuase why not
 
 # store data for thisExp (ExperimentHandler)
@@ -913,6 +966,7 @@ for thisPhaseSelector in PhaseSelector:
     # --- Run Routine "DRO" ---
     routineForceEnded = not continueRoutine
     dragging = False
+    BeginPhase()
     while continueRoutine:
         # get current time
         t = routineTimer.getTime()

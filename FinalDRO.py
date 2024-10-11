@@ -249,26 +249,26 @@ def EachFrameChecker():
 
             if btncounter == 1:
                 
-                conI = str(Button_1)[2:].split(" ")
+                conI = str(Button_1).split(" ")
                 
             if btncounter == 2:
-                conI = str(Button_2)[2:].split(" ")
+                conI = str(Button_2).split(" ")
             if btncounter == 3:
-                conI = str(Button_3)[2:].split(" ")
+                conI = str(Button_3).split(" ")
             if btncounter == 4:
-                conI = str(Button_4)[2:].split(" ")
+                conI = str(Button_4).split(" ")
             if btncounter == 5:
-                conI = str(Button_5)[2:].split(" ")
+                conI = str(Button_5).split(" ")
             
         #we change the contigency signifiers back to integers, to be used as indexes so that we can put all of the contigency information back into speciic variable lists (am I sure this is the best way to go about this??)
         #
-            if conI != ["ne"] and MouseTimer.getTime() > 0.3:
+            if conI != ["None"] and MouseTimer.getTime() > 0.3:
                 i.opacity = 1
             else: 
                 i.opacity = 0
-            if conI != ["ne"]:
+            if conI != ["None"]:
                 for y in range(len(conI)):
-                    
+                   
                     conI[y] = int(conI[y])
                 for y in conI:
                     reinsched.append(cont["Reinforcement_Schedule"][y-1])
@@ -352,15 +352,15 @@ def MouseClicked(button):
     ClickIntCounter += 1
     ClickPhaseCounter += 1
     if button.name == "Circle1":
-        conI = str(Button_1)[2:].split(" ")
+        conI = str(Button_1).split(" ")
     elif button.name == "Circle2":
-        conI = str(Button_2)[2:].split(" ")
+        conI = str(Button_2).split(" ")
     elif button.name == "Circle3":
-        conI = str(Button_3)[2:].split(" ")
+        conI = str(Button_3).split(" ")
     elif button.name == "Circle4":
-        conI = str(Button_4)[2:].split(" ")
+        conI = str(Button_4).split(" ")
     elif button.name == "Circle5":
-        conI = str(Button_5)[2:].split(" ")
+        conI = str(Button_5).split(" ")
     
     reinsched = []
     ComInteg = []
@@ -372,6 +372,7 @@ def MouseClicked(button):
     VarMax = []
     if conI != ['None']:
         for i in range(len(conI)):
+    
             conI[i] = int(conI[i])
         for i in conI:
             reinsched.append(cont["Reinforcement_Schedule"][i-1])

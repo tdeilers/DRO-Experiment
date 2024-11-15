@@ -483,36 +483,7 @@ def MouseClicked(button):
     #opacity=1.0, depth=0.0, interpolate=True,btnnum = i+1))
 def BeginPhase():
 
-    if Button_1 != None:
-        idlist = str(Button_1).split("*")
-        i = int(idlist[0])
-        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
-        buttonlist[0].vertices = btn["Shape"][i-1]
-        buttonlist[0].fillColor = btn["Color"][i-1]
-    if Button_2 != None:
-        idlist = str(Button_2).split("*")
-        i = int(idlist[0])
-        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
-        buttonlist[0].vertices = btn["Shape"][i-1]
-        buttonlist[0].fillColor = btn["Color"][i-1]
-    if Button_3 != None:
-        idlist = str(Button_3).split("*")
-        i = int(idlist[0])
-        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
-        buttonlist[0].vertices = btn["Shape"][i-1]
-        buttonlist[0].fillColor = btn["Color"][i-1]
-    if Button_4 != None:
-        idlist = str(Button_4).split("*")
-        i = int(idlist[0])
-        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
-        buttonlist[0].vertices = btn["Shape"][i-1]
-        buttonlist[0].fillColor = btn["Color"][i-1]
-    if Button_5 != None:
-        idlist = str(Button_5).split("*")
-        i = int(idlist[0])
-        buttonlist[0].size = [btn["Radius"][i-1],btn["Radius"][i-1]]
-        buttonlist[0].vertices = btn["Shape"][i-1]
-        buttonlist[0].fillColor = btn["Color"][i-1]
+   pass
     #if Button_2 != None:
         # = Button_1.split("*")
         

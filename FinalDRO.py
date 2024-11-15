@@ -347,61 +347,63 @@ def BreakClick():
         return True
 
 def MouseClicked(button):
-    global ClickIntCounter
-    global ClickPhaseCounter
-    ClickIntCounter += 1
-    ClickPhaseCounter += 1
-    if button.name == "Circle1":
-        conI = str(Button_1).split(" ")
-    elif button.name == "Circle2":
-        conI = str(Button_2).split(" ")
-    elif button.name == "Circle3":
-        conI = str(Button_3).split(" ")
-    elif button.name == "Circle4":
-        conI = str(Button_4).split(" ")
-    elif button.name == "Circle5":
-        conI = str(Button_5).split(" ")
+    if button.opacity == 1:
+        global ClickIntCounter
+        global ClickPhaseCounter
+        ClickIntCounter += 1
+        ClickPhaseCounter += 1
     
-    reinsched = []
-    ComInteg = []
+        if button.name == "Button1":
+            conI = str(Button_1).split(" ")
+        elif button.name == "Button2":
+            conI = str(Button_2).split(" ")
+        elif button.name == "Button3":
+            conI = str(Button_3).split(" ")
+        elif button.name == "Button4":
+            conI = str(Button_4).split(" ")
+        elif button.name == "Button5":
+            conI = str(Button_5).split(" ")
+    
+        reinsched = []
+        ComInteg = []
 
-    ComInter = []
-    ReinVar = []
-    Pnts = []
-    VarMin = []
-    VarMax = []
-    if conI != ['None']:
-        for i in range(len(conI)):
+        ComInter = []
+        ReinVar = []
+        Pnts = []
+        VarMin = []
+        VarMax = []
+        if conI != ['None']:
+            for i in range(len(conI)):
     
-            conI[i] = int(conI[i])
-        for i in conI:
-            reinsched.append(cont["Reinforcement_Schedule"][i-1])
-            ComInteg.append(cont["Comission_Integrity"][i-1])
+                conI[i] = int(conI[i])
+            for i in conI:
+                reinsched.append(cont["Reinforcement_Schedule"][i-1])
+                ComInteg.append(cont["Comission_Integrity"][i-1])
         
-            ComInter.append(cont["ComInt"][i-1])
-            ReinVar.append(cont["Reinforcement_Variable"][i-1])
-            Pnts.append(cont["Points"][i-1])
-            VarMin.append(cont["VariableMin"][i-1])
-            VarMax.append(cont["VariableMax"][i-1])
+                ComInter.append(cont["ComInt"][i-1])
+                ReinVar.append(cont["Reinforcement_Variable"][i-1])
+                Pnts.append(cont["Points"][i-1])
+                VarMin.append(cont["VariableMin"][i-1])
+                VarMax.append(cont["VariableMax"][i-1])
             
 
 
     
 
-    if button.timer.getTime() > 0.3:
-        button.timer.reset()
-        Earned = False
-        PointType = "N/A"
+        if button.timer.getTime() > 0.3:
+            button.timer.reset()
+            Earned = False
+            PointType = "N/A"
         
-        RTime = RunTimer.getTime()
-        PTime = PhaseTimer.getTime()
+            RTime = RunTimer.getTime()
+            PTime = PhaseTimer.getTime()
         
-        newButtonPosition(0, [])
+            newButtonPosition(0, [])
        
         
-        if "FI" in reinsched:
-            index = reinsched.index("FI")
-            if button.FITimer.getTime() > ReinVar[index]:
+            if "FI" in reinsched:
+                index = reinsched.index("FI")
+                if button.FITimer.getTime() > ReinVar[index]:
                     #HAVE TO GO HERE AND ADD PTIME RTIME
                     PointEarned("FI " + str(ReinVar[index]) + " Button Click", Pnts[index],PTime,RTime)
                     PointType = "FI " + str(ReinVar[index])
@@ -409,67 +411,67 @@ def MouseClicked(button):
                     #Resets timer FI timer whenever it 
                     #is clicked above 3 seconds
                     button.FITimer.reset()
-        if "VI" in reinsched:
-            index = reinsched.index("VI")
-            if button.VInum == -1:
-                button.VInum = ((VarMax[index]-VarMin[index])*random()) + VarMin[index]
-            if button.FITimer.getTime() > button.VInum:
-                PointEarned("VI " + str(button.VInum) + " Button Click", Pnts[index],PTime,RTime)
-                PointType = "VI " + str(button.VInum)
-                Earned = True
-                button.FITimer.reset()
-                button.VInum = -1
+            if "VI" in reinsched:
+                index = reinsched.index("VI")
+                if button.VInum == -1:
+                    button.VInum = ((VarMax[index]-VarMin[index])*random()) + VarMin[index]
+                if button.FITimer.getTime() > button.VInum:
+                    PointEarned("VI " + str(button.VInum) + " Button Click", Pnts[index],PTime,RTime)
+                    PointType = "VI " + str(button.VInum)
+                    Earned = True
+                    button.FITimer.reset()
+                    button.VInum = -1
             
-        if "FR" in reinsched:
-            button.FRCounter += 1
-            index = reinsched.index("FR")
-            if button.FRCounter >= ReinVar[index]:
-                PointEarned("FR " + str(ReinVar[index]) + "Button Click", Pnts[index], PTime,RTime)
-                PointType = "FR " + str(ReinVar[index]) 
-                Earned = True
-                button.FrCounter = 0
-        if "VR" in reinsched:
-            button.FRCounter += 1
-            index = reinsched.index("VR")
-            if button.VRnum == -1:
-                button.VRnum == random.randint(VarMin[index],VarMax[index])
-            if button.FRCounter >= button.VRnum:
-                PointEarned("VR " + button.VRnum + "Button Click", Pnts[index], PTime,RTime)
-                PointType = "VR" + button.VRnum 
-                Earned = True
-                button.FrCounter = 0
-        if "DRO" in reinsched:
-            index = reinsched.index("DRO")
+            if "FR" in reinsched:
+                button.FRCounter += 1
+                index = reinsched.index("FR")
+                if button.FRCounter >= ReinVar[index]:
+                    PointEarned("FR " + str(ReinVar[index]) + "Button Click", Pnts[index], PTime,RTime)
+                    PointType = "FR " + str(ReinVar[index]) 
+                    Earned = True
+                    button.FrCounter = 0
+            if "VR" in reinsched:
+                button.FRCounter += 1
+                index = reinsched.index("VR")
+                if button.VRnum == -1:
+                    button.VRnum == random.randint(VarMin[index],VarMax[index])
+                if button.FRCounter >= button.VRnum:
+                    PointEarned("VR " + button.VRnum + "Button Click", Pnts[index], PTime,RTime)
+                    PointType = "VR" + button.VRnum 
+                    Earned = True
+                    button.FrCounter = 0
+            if "DRO" in reinsched:
+                index = reinsched.index("DRO")
 
             
-            if button.ComIntTF == True:
-                ComINTError(PTime,RTime, "ComINTError continued")
-            else:
-                numb = 100*random()
-                if numb <= ComInter[index]:
-                    button.DROTimer.reset()
+                if button.ComIntTF == True:
+                    ComINTError(PTime,RTime, "ComINTError continued")
                 else:
-                    ComINTError(PTime,RTime, "ComINTError")
-                    button.ComIntTF = True
+                    numb = 100*random()
+                    if numb <= ComInter[index]:
+                        button.DROTimer.reset()
+                    else:
+                        ComINTError(PTime,RTime, "ComINTError")
+                        button.ComIntTF = True
             
 
-            num = random()*100
-            if num > ComInteg[index]:
-                PointEarned("Comission Error", Pnts[index],PTime,RTime)
-                PointType = "Comission Error"
-                Earned = True
+                num = random()*100
+                if num > ComInteg[index]:
+                    PointEarned("Comission Error", Pnts[index],PTime,RTime)
+                    PointType = "Comission Error"
+                    Earned = True
         
             
-        TimeStampData(click,PTime,RTime)
-        click.addData('Point earned?', Earned)
-        click.addData('Point Type', PointType)
+            TimeStampData(click,PTime,RTime)
+            click.addData('Point earned?', Earned)
+            click.addData('Point Type', PointType)
 
-        click.addData('Target Type', button.name)
-        click.nextEntry()
-        if Earned != True:
-            TimeStampData(RawData, PTime, RTime)
-            RawData.addData('DataType', "Click")
-            RawData.nextEntry()
+            click.addData('Target Type', button.name)
+            click.nextEntry()
+            if Earned != True:
+                TimeStampData(RawData, PTime, RTime)
+                RawData.addData('DataType', "Click")
+                RawData.nextEntry()
 
 
         #Anytime button is clicked, DROTimer is reset
@@ -682,7 +684,7 @@ mouse.mouseClock = core.Clock() #368908
 
 
 for i in range(len(btn["Button"])):
-    buttonlist.append(TimedShapeStim(win=win, name='Circle'+str(i+1),
+    buttonlist.append(TimedShapeStim(win=win, name='Button'+str(i+1),
     size=[btn["Radius"][i],btn["Radius"][i]], vertices=btn["Shape"][i],
     ori=0.0, pos=[0,0], anchor='center',
     lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor=btn["Color"][i],

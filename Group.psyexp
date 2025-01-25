@@ -308,7 +308,7 @@
         <Param val="condition" valType="str" updates="None" name="stopType"/>
         <Param val="False" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="$points1&amp;#10;&amp;#10;" valType="str" updates="set every frame" name="text"/>
+        <Param val="$point1&amp;#10;&amp;#10;" valType="str" updates="set every frame" name="text"/>
         <Param val="norm" valType="str" updates="None" name="units"/>
         <Param val="" valType="code" updates="None" name="validator"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
@@ -335,7 +335,7 @@
         <Param val="condition" valType="str" updates="None" name="stopType"/>
         <Param val="False" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="$points2" valType="str" updates="set every frame" name="text"/>
+        <Param val="$point2" valType="str" updates="set every frame" name="text"/>
         <Param val="norm" valType="str" updates="None" name="units"/>
         <Param val="" valType="code" updates="None" name="validator"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>

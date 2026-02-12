@@ -10,6 +10,7 @@ If you publish work using this script the most relevant publication is:
         https://doi.org/10.3758/s13428-018-01193-y
 
 """
+##Finally learnign version control that will help ALOT
 
 # --- Import packages ---
 helpdebug = True
@@ -193,7 +194,8 @@ def ResetRunTimer():
 
 def ResetAllTimers():
     
-   
+    for i in buttonlist:
+        i.DROTimer.reset()
     PhaseTimer.reset()
 
     return
@@ -266,10 +268,11 @@ def EachFrameChecker():
             
         #we change the contigency signifiers back to integers, to be used as indexes so that we can put all of the contigency information back into speciic variable lists (am I sure this is the best way to go about this??)
         #
-            if conI != ["None"] and MouseTimer.getTime() > 0.3:
+            if conI != ["None"] and i.timer.getTime() > 0.3:
                 i.opacity = 1
             else: 
                 i.opacity = 0
+                print("button not seen now wow")
             if conI != ["None"]:
                 for y in range(len(conI)):
                    
@@ -339,7 +342,7 @@ def OmissionErrorNoClick(PTime,RTime):
 #Integrity numbers are same as above
 def BreakClick():
     global BreakPauseTime
-    if PhaseTimer.getTime() > 5: 
+    if PhaseTimer.getTime() > 5 and Skippable_BreakTF == "True": 
         RTime = RunTimer.getTime()
         PTime = PhaseTimer.getTime()
         
@@ -349,6 +352,7 @@ def BreakClick():
         RunTimer.reset(-1*BreakPauseTime)
         ResetAllTimers()
         return True
+    return False
 
 def MouseClicked(button):
     if button.opacity == 1:
@@ -398,7 +402,7 @@ def MouseClicked(button):
             button.timer.reset()
             Earned = False
             PointType = "N/A"
-        
+            
             RTime = RunTimer.getTime()
             PTime = PhaseTimer.getTime()
         
@@ -675,7 +679,7 @@ defaultKeyboard = keyboard.Keyboard(backend='iohub')
 
 # --- Initialize components for Routine "Initalize" ---
 text = visual.TextStim(win=win, name='text',
-    text='Your goal is to earn as many points as possible. How you earn points may change throughout the experiment. All your points will be visible throughout the experiment at the top of the screen. Click anywhere when you are ready to begin.',
+    text='Your goal is to earn as many points as possible. How you earn points may change throughout the experiment. All your points will be visible at the top of the screen.  You will be given a 1-min break about every 10 minutes, and a 10-minute break halfway through (after about 40 min). You are competing with other people for the most points; the top three point-earners in the study will be awarded money. Do your best to earn the most points!',
     font='Open Sans', 
     pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
     color='white', colorSpace='rgb', opacity=None, 
@@ -728,14 +732,14 @@ DROPoints = visual.TextStim(win=win, name='DROPoints',
     pos=(0, 0.45), height=0.05, wrapWidth=None, ori=0.0, 
     color='black', colorSpace='rgb', opacity=None, 
     languageStyle='LTR',
-    depth=-4.0);
+    depth=-4.0)
 BreakTxt = visual.TextStim(win=win, name='BreakTxt',
     text='Break \n' + str(Duration - PhaseTimer.getTime()) + 'If you wish to skip the break, click the orange square below',
     font='Open Sans',
     pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
     color='white', colorSpace='rgb', opacity=None, 
     languageStyle='LTR',
-    depth=-5.0);
+    depth=-5.0)
 BreakButton = visual.Rect(
     win=win, name='BreakButton',
     width=(0.1, 0.1)[0], height=(0.1, 0.1)[1],
@@ -745,12 +749,12 @@ BreakButton = visual.Rect(
 
 # --- Initialize components for Routine "End" ---
 text_2 = visual.TextStim(win=win, name='text_2',
-    text='The experiment is done, please alert the researcher \n Thank you for participating! \n Please alert the researcher',
+    text='The experiment is done!\n Thank you for participating!\n Please alert the researcher.',
     font='Open Sans',
     pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
     color='white', colorSpace='rgb', opacity=None, 
     languageStyle='LTR',
-    depth=0.0);
+    depth=0.0)
 
 # Create some handy timers
 globalClock = core.Clock()  # to track the time since experiment started
@@ -1139,8 +1143,17 @@ for thisPhaseSelector in PhaseSelector:
         # if BreakTxt is active this frame...
         if BreakTxt.status == STARTED:
             # update params
+           
             if Duration > PhaseTimer.getTime(): 
-                BreakTxt.text='hey you can take a break now! You have ' + str(round(Duration - PhaseTimer.getTime())) + ' seconds left in your break, \n however you can click the button to end it early \n'
+                if Skippable_BreakTF == True:
+                    BreakTxt.text='hey you can take a break now! You have ' + str(round(Duration - PhaseTimer.getTime())) + ' seconds left in your break, \n however you can click the button to end it early \n'
+                    ssstring = "s"
+                    if round(Duration/60)==1:
+                        ssstring = ""
+                    #BreakTxt.text='Hey you can take a break now! You have ' + str(round(Duration/60)) + ' minute'+ssstring+' and a button will appear at the end of the break. Click on the button once it appears to continue the game.'
+                elif Skippable_BreakTF == False:
+                    BreakTxt.text='Hey you can take a break now! You have ' + str(round(Duration - PhaseTimer.getTime())) + ' seconds left in your break.'
+            
             elif Duration < PhaseTimer.getTime():
                 BreakTxt.text = 'Click the button to continue'
 
@@ -1149,7 +1162,7 @@ for thisPhaseSelector in PhaseSelector:
         # *BreakButton* updates
         
         # if BreakButton is starting this frame...
-        if BreakButton.status == NOT_STARTED and PhaseName == "Break" and PhaseTimer.getTime() >= 2:
+        if (BreakButton.status == NOT_STARTED and PhaseName == "Break" and ((Skippable_BreakTF == True and PhaseTimer.getTime() >= 2) or Duration < PhaseTimer.getTime())):
             # keep track of start time/frame for later
             BreakButton.frameNStart = frameN  # exact frame index
             BreakButton.tStart = t  # local t and not account for scr refresh
@@ -1160,7 +1173,7 @@ for thisPhaseSelector in PhaseSelector:
             # update status
             BreakButton.status = STARTED
             BreakButton.setAutoDraw(True)
-        
+    
         # if BreakButton is active this frame...
         if BreakButton.status == STARTED:
             # update params

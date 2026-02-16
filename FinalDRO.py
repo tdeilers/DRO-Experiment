@@ -366,8 +366,8 @@ def MouseClicked(button):
    
     ClickTimer.reset()
     if button.opacity == 1:
-        ResetAllDROTimers()
-     
+        button.DROTimer.reset()
+        
         global ClickIntCounter
         global ClickPhaseCounter
         ClickIntCounter += 1

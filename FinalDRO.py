@@ -14,6 +14,7 @@ If you publish work using this script the most relevant publication is:
 
 # --- Import packages ---
 helpdebug = True
+import traceback
 if helpdebug:
     print("we opened atleast")
 from psychopy import locale_setup
@@ -42,7 +43,6 @@ import pandas as pd
 
 import sys
 import os
-
 
 
 # Run 'Before Experiment' code from code
@@ -164,7 +164,8 @@ click = data.ExperimentHandler(name='DROIntegrity', dataFileName=filename + 'Cli
 CurrentPhase = "Initialize"
 DataTimer = core.Clock()
 DataTimer.addTime(0)
-
+ClickTimer = core.Clock()
+ClickTimer.addTime(0)
 PointIntCounter = 0
 ClickIntCounter = 0
 PointPhaseCounter = 0
@@ -192,14 +193,15 @@ def ResetRunTimer():
     PhaseTimer.reset()
     return
 
-def ResetAllTimers():
+#Resets All Button Tiemrs
+def ResetAllDROTimers():
     
     for i in buttonlist:
         i.DROTimer.reset()
-    PhaseTimer.reset()
-
-    return
-
+        
+    
+    return 
+    
 
 #This function is the one that should be called
 #for any DRO functions. It should be called continously in DRO
@@ -238,7 +240,8 @@ def EachFrameChecker():
     
         btncounter = 0
         for i in buttonlist:
-            
+            if ClickTimer.getTime() > 0.3:
+                i.opacity = 1
         #this code, i can't believe it works. let's figure out how!
         #create blank lists for Reinforcmenet Schedules, Omission Integerity, Reinforcement Variables, and Points!
             btncounter += 1
@@ -267,12 +270,12 @@ def EachFrameChecker():
                 conI = str(Button_5).split(" ")
             
         #we change the contigency signifiers back to integers, to be used as indexes so that we can put all of the contigency information back into speciic variable lists (am I sure this is the best way to go about this??)
-        #
-            if conI != ["None"] and i.timer.getTime() > 0.3:
-                i.opacity = 1
-            else: 
-                i.opacity = 0
-                print("button not seen now wow")
+        #This code doesn't work correctly because it assumes that.. only one button disapears. 
+            #if conI != ["None"] and i.timer.getTime() > 0.3:
+                #i.opacity = 1
+            #else: 
+               #i.opacity = 0
+                
             if conI != ["None"]:
                 for y in range(len(conI)):
                    
@@ -342,7 +345,9 @@ def OmissionErrorNoClick(PTime,RTime):
 #Integrity numbers are same as above
 def BreakClick():
     global BreakPauseTime
-    if PhaseTimer.getTime() > 5 and Skippable_BreakTF == "True": 
+    print("break click")
+    if (PhaseTimer.getTime() > 5 and Skippable_BreakTF == True) or Duration < PhaseTimer.getTime(): 
+
         RTime = RunTimer.getTime()
         PTime = PhaseTimer.getTime()
         
@@ -350,17 +355,24 @@ def BreakClick():
         RawData.addData('DataType', "PhaseChange")
         RawData.nextEntry()
         RunTimer.reset(-1*BreakPauseTime)
-        ResetAllTimers()
+        PhaseTimer.reset()
+        ResetAllDROTimers()
         return True
-    return False
-
+    
+    
+##this is what is called when button is clicked, it called with the button that is clicked. 
+##It is called with the button that was clicked
 def MouseClicked(button):
+   
+    ClickTimer.reset()
     if button.opacity == 1:
+        ResetAllDROTimers()
+     
         global ClickIntCounter
         global ClickPhaseCounter
         ClickIntCounter += 1
         ClickPhaseCounter += 1
-    
+        #here what should be happening is, depending on the button clicked, the contingenices attached to every button is put into a string. 
         if button.name == "Button1":
             conI = str(Button_1).split(" ")
         elif button.name == "Button2":
@@ -371,7 +383,7 @@ def MouseClicked(button):
             conI = str(Button_4).split(" ")
         elif button.name == "Button5":
             conI = str(Button_5).split(" ")
-    
+
         reinsched = []
         ComInteg = []
 
@@ -380,10 +392,13 @@ def MouseClicked(button):
         Pnts = []
         VarMin = []
         VarMax = []
+        #if conI exists, turn it into integers. 
         if conI != ['None']:
             for i in range(len(conI)):
     
                 conI[i] = int(conI[i])
+            #now we want to import the contigencies, so reinforcemnt scheduels, integrity kidn of thing. I realzie that this might be alot smarter to do  by just augmenting every button everytime the phase changes. yeah. I think I might do that. oh wait cause, then i can't have mulitple contigenices maybe?
+
             for i in conI:
                 reinsched.append(cont["Reinforcement_Schedule"][i-1])
                 ComInteg.append(cont["Comission_Integrity"][i-1])
@@ -393,22 +408,23 @@ def MouseClicked(button):
                 Pnts.append(cont["Points"][i-1])
                 VarMin.append(cont["VariableMin"][i-1])
                 VarMax.append(cont["VariableMax"][i-1])
+   
+      
+        
             
-
-
-    
-
+        #if can be clicked    
         if button.timer.getTime() > 0.3:
             button.timer.reset()
+            
             Earned = False
             PointType = "N/A"
             
             RTime = RunTimer.getTime()
             PTime = PhaseTimer.getTime()
-        
+
             newButtonPosition(0, [])
+
        
-        
             if "FI" in reinsched:
                 index = reinsched.index("FI")
                 if button.FITimer.getTime() > ReinVar[index]:
@@ -448,6 +464,7 @@ def MouseClicked(button):
                     PointType = "VR" + button.VRnum 
                     Earned = True
                     button.FrCounter = 0
+            
             if "DRO" in reinsched:
                 index = reinsched.index("DRO")
 
@@ -462,7 +479,7 @@ def MouseClicked(button):
                         ComINTError(PTime,RTime, "ComINTError")
                         button.ComIntTF = True
             
-
+                print("uh5")
                 num = random()*100
                 if num > ComInteg[index]:
                     PointEarned("Comission Error", Pnts[index],PTime,RTime)
@@ -532,12 +549,13 @@ def RoutineEnder():
         #PRint Loop Ends
         routineended = True
         PhaseTimer.reset()
-        ResetAllTimers()
+        ResetAllDROTimers()
         return True
     return False
 #makes new button position, will be called when clicks happen
+#this function is so smart its cool i understand. It says num = 0, coords are list. and then its recursive. Its trying to generate a list of coordinates taht are all not matching eachother. 
 def newButtonPosition(num,coords):
-    
+    #basecase 
     if num == len(buttonlist):
         return
     
@@ -560,6 +578,8 @@ def newButtonPosition(num,coords):
 
     
     buttonlist[num].setPos((xpos,ypos),log=False)
+    #turns buttons off after a click
+    buttonlist[num].opacity = 0
     coords.append([xpos,ypos])
     return newButtonPosition(num+1,coords)
         
@@ -714,7 +734,8 @@ DROMouse.mouseClock = core.Clock()
 # Run 'Begin Experiment' code from DROCode
 #DROBError, BE stands for Both Error (so combined error).
 #reset timers from last expirement? maybe I suppose.
-ResetAllTimers()
+ResetAllDROTimers()
+PhaseTimer.reset()
 if Order == 1: 
     RunTimer.reset()
 
@@ -883,7 +904,7 @@ for thisComponent in InitalizeComponents:
     if hasattr(thisComponent, "setAutoDraw"):
         thisComponent.setAutoDraw(False)
 # Run 'End Routine' code from code
-ResetAllTimers()
+ResetAllDROTimers()
 ResetRunTimer()
 #Not at all sure what run time is, or if its ever used, leaving in for now becuase why not
 
@@ -1027,7 +1048,7 @@ for thisPhaseSelector in PhaseSelector:
                             if PhaseName == "Break" and obj == BreakButton:
                                 if BreakClick() == True:
                                     continueRoutine = False
-                            elif PhaseName != "Break" and obj != BreakButton:
+                            elif PhaseName != "Break" and obj != BreakButton and ClickTimer.getTime() > 0.3:
                                 MouseClicked(obj)
                             #This happens if the red butotn is clicked during assesmnet phsa
                     # check whether click was in correct object
@@ -1162,7 +1183,7 @@ for thisPhaseSelector in PhaseSelector:
         # *BreakButton* updates
         
         # if BreakButton is starting this frame...
-        if (BreakButton.status == NOT_STARTED and PhaseName == "Break" and ((Skippable_BreakTF == True and PhaseTimer.getTime() >= 2) or Duration < PhaseTimer.getTime())):
+        if (BreakButton.status == NOT_STARTED and PhaseName == "Break" and ((Skippable_BreakTF == True and PhaseTimer.getTime() >= 5) or Duration < PhaseTimer.getTime())):
             # keep track of start time/frame for later
             BreakButton.frameNStart = frameN  # exact frame index
             BreakButton.tStart = t  # local t and not account for scr refresh

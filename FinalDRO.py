@@ -103,6 +103,21 @@ class TimedShapeStim(ShapeStim):
         self.FTTimer = core.Clock()
         self.FTTimer.addTime(0)
         self.btnnum = btnnum
+    def inUseCheck(self):
+        ##ugly function, can't figure out a better way to check if button should be on
+        if self.name == "Button1" and Button_1 != None: 
+            return True
+        elif self.name == "Button2" and Button_2 != None: 
+            return True
+        elif self.name == "Button3" and Button_3 != None: 
+            return True
+        elif self.name == "Button4" and Button_4 != None: 
+            return True
+        elif self.name == "Button5" and Button_5 != None: 
+            return True
+        return False
+
+
 
 mySound = sound.Sound("Point.wav")
 
@@ -227,6 +242,7 @@ def EachFrameChecker():
     if PhaseName == "Break":
         for i in buttonlist:
             
+            
             i.opacity = 0
     #turns them back on after 0.3 second blink from click
     else:
@@ -240,7 +256,7 @@ def EachFrameChecker():
     
         btncounter = 0
         for i in buttonlist:
-            if ClickTimer.getTime() > 0.3:
+            if ClickTimer.getTime() > 0.3 and i.inUseCheck():
                 i.opacity = 1
         #this code, i can't believe it works. let's figure out how!
         #create blank lists for Reinforcmenet Schedules, Omission Integerity, Reinforcement Variables, and Points!
@@ -292,7 +308,7 @@ def EachFrameChecker():
                 index = reinsched.index("DRO")
                 
                 
-            #Checks to see if DRO timer has hit 3 seconds
+            #Checks to see if DRO timer has hit 3 seconds, awards points if it does. 
                 
                 if i.DROTimer.getTime() > ReinVar[index]:
                     i.DROTimer.reset() 
@@ -366,7 +382,7 @@ def MouseClicked(button):
    
     ClickTimer.reset()
     if button.opacity == 1:
-        button.DROTimer.reset()
+        
         
         global ClickIntCounter
         global ClickPhaseCounter
@@ -486,7 +502,9 @@ def MouseClicked(button):
                     PointType = "Comission Error"
                     Earned = True
         
-            
+            if button.ComIntTF == False:
+                button.DROTimer.reset()
+    
             TimeStampData(click,PTime,RTime)
             click.addData('Point earned?', Earned)
             click.addData('Point Type', PointType)
@@ -1014,7 +1032,7 @@ for thisPhaseSelector in PhaseSelector:
         # *DROMouse* updates
         # *DROMouse* updates
         
-        # if DROMouse is starting this frame...
+        # if DROMouse is starting this frame...R
         if DROMouse.status == NOT_STARTED and t >= 0-frameTolerance:
             # keep track of start time/frame for later
             DROMouse.frameNStart = frameN  # exact frame index

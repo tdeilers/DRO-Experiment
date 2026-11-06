@@ -67,6 +67,8 @@ from distutils.core import setup
 import os
 if helpdebug:
     print("classes about to load in")
+
+    
 class TimedShapeStim(ShapeStim):
     def __init__(self,btnnum, win,name,size, vertices,ori,pos,anchor,lineWidth, colorSpace, opacity,depth, interpolate, fillColor='white', lineColor='black'):
         # Initialize the parent class (ShapeStim)
@@ -89,10 +91,10 @@ class TimedShapeStim(ShapeStim):
             
         )
         # Initialize the timer
-        self.timer = core.Clock()
-        self.timer.addTime(0)
+        self.clicktimer = core.Clock()
+        self.clicktimer.addTime(0)
         self.FITimer = core.Clock()
-        self.timer.addTime(0)
+        self.FITimer.addTime(0)
         self.FRCounter = 0
         self.DROTimer = core.Clock()
         self.DROTimer.addTime(0)
@@ -129,8 +131,9 @@ ypos2 = 0
 Order = 0
 ypos = 0
 ClickVariable = 0
+gainorlose = True
 #Initalize timers
-
+pointcache = 0 
 
 #Keeps track of how long current phase has been going
 PhaseTimer = core.Clock()
@@ -145,6 +148,8 @@ MouseTimer = core.Clock()
 MouseTimer.addTime(0)
 RunTimer = core.Clock()
 RunTimer.addTime(0)
+PointBoxTimer = core.Clock()
+PointBoxTimer.addTime(0)
 BreakPauseTime = 0 
 PointBoxColor = 0
 
@@ -175,16 +180,22 @@ setup_logging('logs')
 #Raw Data, takes data everytime a point happens, everytime a click happens, everytime a phase chnage happens, everytime an error happens
 RawData = data.ExperimentHandler(name = "DROIntegrity", dataFileName = filename + 'RawData')
 #Clicks data, Takes data everytime a click happens
-click = data.ExperimentHandler(name='DROIntegrity', dataFileName=filename + 'ClicksData')
+click = data.ExperimentHandler(name='DROIntegrity', dataFileName= filename + 'ClicksData')
 CurrentPhase = "Initialize"
 DataTimer = core.Clock()
 DataTimer.addTime(0)
 ClickTimer = core.Clock()
 ClickTimer.addTime(0)
+AnyClickTimer = core.Clock()
+AnyClickTimer = ClickTimer.addTime(0)
+ChangeOverTimer = core.CountdownTimer(0)
+ChangeOverTimer.reset(3)
+
 PointIntCounter = 0
 ClickIntCounter = 0
-PointPhaseCounter = 0
+
 ClickPhaseCounter = 0
+
 #This section below will initialize excel forms and put things into a class:
 buttonlist = []
 contdoc = pd.read_excel("contigency.xlsx",sheet_name="Contigency")
@@ -234,16 +245,21 @@ def EachFrameChecker():
     PTime = PhaseTimer.getTime()
     
     #manages the color of the point box, canges it back to grey after 0.8 seconds.
-    if PointTimer.getTime() > 0.8:
+    i
+    if PointBoxTimer.getTime() > 0.8:
         global PointBoxColor
         PointBoxColor = 0
     #Changes botton opacity, turning them off during breaks
    
-    if PhaseName == "Break":
+    if PhaseName == "Break" or PhaseName == "Instructions":
         for i in buttonlist:
             
             
             i.opacity = 0
+        if PhaseName == "Instructions":
+            BreakTxt.text = RuleText
+        if PhaseName == "Break":
+            BreakTxt.text = 'Break \n' + str(Duration - PhaseTimer.getTime()) + 'If you wish to skip the break, click the orange square below'
     #turns them back on after 0.3 second blink from click
     else:
    
@@ -255,7 +271,8 @@ def EachFrameChecker():
     
     
         btncounter = 0
-        for i in buttonlist:
+        
+        for i in buttonlist + [AnyClickTracker]:
             if ClickTimer.getTime() > 0.3 and i.inUseCheck():
                 i.opacity = 1
         #this code, i can't believe it works. let's figure out how!
@@ -264,9 +281,10 @@ def EachFrameChecker():
             reinsched = []
         
             OmisInteg = []
-
+            
             ReinVar = []
             Pnts = []
+            
         #What is this! WHAT IS THIS!
         #Oh I know, Red_Circle and Black_Circle are contingency variables, this means that they are collecting the contingency (or conI as in i's contiengencies)
         #we change it to a str, split it, then (thought continued below)
@@ -284,6 +302,9 @@ def EachFrameChecker():
                 conI = str(Button_4).split(" ")
             if btncounter == 5:
                 conI = str(Button_5).split(" ")
+            if btncounter == 6:
+                conI = str(AnyClickContingencies).split(" ")
+            
             
         #we change the contigency signifiers back to integers, to be used as indexes so that we can put all of the contigency information back into speciic variable lists (am I sure this is the best way to go about this??)
         #This code doesn't work correctly because it assumes that.. only one button disapears. 
@@ -301,6 +322,7 @@ def EachFrameChecker():
                     OmisInteg.append(cont["Omission_Integrity"][y-1])
                     ReinVar.append(cont["Reinforcement_Variable"][y-1])
                     Pnts.append(cont["Points"][y-1])
+                    
             
         #Now, we just check to see if DRO is one of the schedules (yeah there has got to be a better way), though I do thing the "DRO" in reinshched is really fun way to do this. 
         
@@ -329,7 +351,7 @@ def EachFrameChecker():
                         OmissionErrorNoClick(PTime,RTime)
             if "FT" in reinsched:
                 index = reinsched.index("FT")
-                if i.FTTimer.getTime() > ReinVar(index):
+                if i.FTTimer.getTime() > ReinVar[index]:
                     i.FTTimer.reset()
 
                     PointEarned("FT", Pnts[index],PTime,RTime)
@@ -374,14 +396,43 @@ def BreakClick():
         PhaseTimer.reset()
         ResetAllDROTimers()
         return True
+#This is what happens if a click happens
+
+def AnyClickCont():
+    conI = str(AnyClickContingencies).split(" ")
+    #Gets our list of contingenices
+    #loops thrugh contingineceis.
+    reinsched = []
+    ComInteg = []
+
+    ComInter = []
+    ReinVar = []
+    Pnts = []
+    VarMin = []
+    VarMax = []
+    ChangeDelay = []    
+    if conI != ['None']:
+        for i in range(len(conI)):
+        
+            conI[i] = int(conI[i])
+ #now we want to import the contigencies, so reinforcemnt scheduels, integrity kidn of thing. I realzie that this might be alot smarter to do  by just augmenting every button everytime the phase changes. yeah. I think I might do that. oh wait cause, then i can't have mulitple contigenices maybe?
     
-    
+            for i in conI:
+                reinsched.append(cont["Reinforcement_Schedule"][i-1])
+                ComInteg.append(cont["Comission_Integrity"][i-1])
+            
+                ComInter.append(cont["ComInt"][i-1])
+                ReinVar.append(cont["Reinforcement_Variable"][i-1])
+                Pnts.append(cont["Points"][i-1])
+                VarMin.append(cont["VariableMin"][i-1])
+                VarMax.append(cont["VariableMax"][i-1])
+                ChangeDelay.append(cont["ChangeOverDelay"][i-1])
 ##this is what is called when button is clicked, it called with the button that is clicked. 
 ##It is called with the button that was clicked
-def MouseClicked(button):
-   
-    ClickTimer.reset()
-    if button.opacity == 1:
+def MouseClicked(button, validClick):
+    if validClick:
+        ClickTimer.reset()
+    if button.opacity == 1 or validClick == False:
         
         
         global ClickIntCounter
@@ -399,6 +450,11 @@ def MouseClicked(button):
             conI = str(Button_4).split(" ")
         elif button.name == "Button5":
             conI = str(Button_5).split(" ")
+        elif button.name == "AnyClickTracker":
+            conI = str(AnyClickContingencies).split(" ")
+        
+        if conI == ['None'] and validClick == False:
+            return 
 
         reinsched = []
         ComInteg = []
@@ -408,6 +464,7 @@ def MouseClicked(button):
         Pnts = []
         VarMin = []
         VarMax = []
+        ChangeDelay = []
         #if conI exists, turn it into integers. 
         if conI != ['None']:
             for i in range(len(conI)):
@@ -418,34 +475,55 @@ def MouseClicked(button):
             for i in conI:
                 reinsched.append(cont["Reinforcement_Schedule"][i-1])
                 ComInteg.append(cont["Comission_Integrity"][i-1])
-        
+
                 ComInter.append(cont["ComInt"][i-1])
                 ReinVar.append(cont["Reinforcement_Variable"][i-1])
                 Pnts.append(cont["Points"][i-1])
                 VarMin.append(cont["VariableMin"][i-1])
                 VarMax.append(cont["VariableMax"][i-1])
-   
-      
+                ChangeDelay.append(cont["ChangeOverDelay"][i-1])
+                
         
             
         #if can be clicked    
-        if button.timer.getTime() > 0.3:
-            button.timer.reset()
-            
+        print("uh did it get to this spot")
+        if button.clicktimer.getTime() > 0.3 or not validClick:
+            print("did we get here")
+            #Click is registered!!
+            try:
+                button.clicktimer.reset()
+            except Exception as e:
+                print("Reset failed", repr(e))
+            print("did we get here")
             Earned = False
             PointType = "N/A"
-            
+            print("did we get here")
             RTime = RunTimer.getTime()
             PTime = PhaseTimer.getTime()
-
-            newButtonPosition(0, [])
-
-       
+            if validClick:
+                newButtonPosition(0, [])
+                ClickType = " Button Click"
+                
+            else:
+                ClickType = " Any Click"
+            print(ClickType)
+            #Does anything exist in change delay
+           
+            #checks to see that.. something something about idk. 
+            if not (len(ChangeDelay) == 1 and np.isnan(ChangeDelay[0])):
+               
+                #is there only one thing? Still have to handle multiple things cases - but this should never be happening in reality
+                
+                if len(ChangeDelay) == 1: 
+                    
+                    ChangeOverTimer.reset(ChangeDelay[0])
+                    print(ChangeDelay[0])
+        
             if "FI" in reinsched:
                 index = reinsched.index("FI")
                 if button.FITimer.getTime() > ReinVar[index]:
                     #HAVE TO GO HERE AND ADD PTIME RTIME
-                    PointEarned("FI " + str(ReinVar[index]) + " Button Click", Pnts[index],PTime,RTime)
+                    PointEarned("FI " + str(ReinVar[index]) + ClickType, Pnts[index],PTime,RTime)
                     PointType = "FI " + str(ReinVar[index])
                     Earned = True
                     #Resets timer FI timer whenever it 
@@ -456,7 +534,7 @@ def MouseClicked(button):
                 if button.VInum == -1:
                     button.VInum = ((VarMax[index]-VarMin[index])*random()) + VarMin[index]
                 if button.FITimer.getTime() > button.VInum:
-                    PointEarned("VI " + str(button.VInum) + " Button Click", Pnts[index],PTime,RTime)
+                    PointEarned("VI " + str(button.VInum) + ClickType, Pnts[index],PTime,RTime)
                     PointType = "VI " + str(button.VInum)
                     Earned = True
                     button.FITimer.reset()
@@ -469,7 +547,7 @@ def MouseClicked(button):
                     PointEarned("FR " + str(ReinVar[index]) + "Button Click", Pnts[index], PTime,RTime)
                     PointType = "FR " + str(ReinVar[index]) 
                     Earned = True
-                    button.FrCounter = 0
+                    button.FRCounter = 0
             if "VR" in reinsched:
                 button.FRCounter += 1
                 index = reinsched.index("VR")
@@ -479,7 +557,7 @@ def MouseClicked(button):
                     PointEarned("VR " + button.VRnum + "Button Click", Pnts[index], PTime,RTime)
                     PointType = "VR" + button.VRnum 
                     Earned = True
-                    button.FrCounter = 0
+                    button.FRCounter = 0
             
             if "DRO" in reinsched:
                 index = reinsched.index("DRO")
@@ -489,13 +567,14 @@ def MouseClicked(button):
                     ComINTError(PTime,RTime, "ComINTError continued")
                 else:
                     numb = 100*random()
+                    #basically if there is no error, meaning the numberr is less then or equal to integrity Percent, DROTimer is Reset.
                     if numb <= ComInter[index]:
                         button.DROTimer.reset()
                     else:
                         ComINTError(PTime,RTime, "ComINTError")
                         button.ComIntTF = True
             
-                print("uh5")
+                
                 num = random()*100
                 if num > ComInteg[index]:
                     PointEarned("Comission Error", Pnts[index],PTime,RTime)
@@ -504,7 +583,8 @@ def MouseClicked(button):
         
             if button.ComIntTF == False:
                 button.DROTimer.reset()
-    
+            #so we are taking data for anyclick, and then we'll just have people delete all the stuff they don't want, like, if you don't care for AnyClick Data just use excel or power query to delete all rows with it's button name. 
+            #  (And anyclick data will only happen if there is a contingency)
             TimeStampData(click,PTime,RTime)
             click.addData('Point earned?', Earned)
             click.addData('Point Type', PointType)
@@ -517,8 +597,7 @@ def MouseClicked(button):
                 RawData.nextEntry()
 
 
-        #Anytime button is clicked, DROTimer is reset
-        #Right? Ask Paige
+ 
         
     return
 #for i in range(len(btn["Button"])): buttonlist.append(TimedShapeStim(win=win, name='Circle'+str(i+1),
@@ -546,7 +625,7 @@ def RoutineEnder():
     if PhaseTimer.getTime() > Duration and PhaseName != "Break":
         global routineended
         #ends loop and routine if it is time to move on
-        global PointPhaseCounter
+        
         global ClickPhaseCounter
         RTime = RunTimer.getTime()
         PTime = PhaseTimer.getTime()
@@ -556,7 +635,7 @@ def RoutineEnder():
             points = 0
             pointstxt = "Points: " + str(points)
      
-        PointPhaseCounter = 0
+        
         ClickPhaseCounter = 0
         TimeStampData(RawData,PTime,RTime)
         RawData.addData('DataType', "PhaseChange")
@@ -631,25 +710,41 @@ def PointEarned(Type,Value, PTime,RTime):
     global pointstxt
     global PointBoxColor
     global PointIntCounter
-    global PointPhaseCounter
+    global gainorlose
     global mySound
+
+    TimeStampData(RawData,PTime,RTime)
+
     
-    PointTimer.reset()
-    mySound.stop()
-    mySound.play() 
-    PointIntCounter +=1
-    PointPhaseCounter += 1
-    Value = int(Value)
-    points += Value
-    pointstxt = "Points: " + str(points)
-    #adds data to points file
+    
+    if ChangeOverTimer.getTime() > 0:
+        print("point for changeover thing?)")
+        RawData.addData('DataType', "ChangeOverPointDenied")
+    else:
+        #are we gaining points, then this code block
+        if Value >= 0:
+            gainorlose = True
+            mySound.stop()
+            mySound.play() 
+        elif Value < 0: 
+            gainorlose = False
+        #THIS IS WHERE WE PROGRAM POINT CACHE AND DO THIS. 
+        PointTimer.reset()
+        PointBoxTimer.reset()
+        Value = int(Value)
+        points += Value
+        pointstxt = "Points: " + str(points)
+        #adds data to points file            
+        #exp.nextEntry()
+        #adds data to raw file about points
+        #ButtonStampData(btninfo,cntinfo)
+        RawData.addData('DataType', "Point")
+ 
    
     
     #exp.nextEntry()
     #adds data to raw file about points
-    TimeStampData(RawData,PTime,RTime)
-    #ButtonStampData(btninfo,cntinfo)
-    RawData.addData('DataType', "Point")
+    
     RawData.addData('totalpoints', points)
     RawData.addData('ReasonPointedEarned', Type + str(Value))
     RawData.nextEntry()
@@ -693,7 +788,7 @@ win = visual.Window(
     backgroundImage='', backgroundFit='none',
     blendMode='avg', useFBO=True, 
     units='height')
-win.mouseVisible = False
+win.mouseVisible = True
 # store frame rate of monitor if we can measure it
 expInfo['frameRate'] = win.getActualFrameRate()
 if expInfo['frameRate'] != None:
@@ -738,6 +833,13 @@ for i in range(len(btn["Button"])):
     ori=0.0, pos=[0,0], anchor='center',
     lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor=btn["Color"][i],
     opacity=1.0, depth=0.0, interpolate=True,btnnum = i+1))
+print("here")
+AnyClickTracker = TimedShapeStim(win=win, name='AnyClickTracker',
+    size=[0.1,0.1], vertices="circle",
+    ori=0.0, pos=[1,1], anchor='center',
+    lineWidth=1.0,     colorSpace='rgb',  lineColor='white', fillColor="White",
+    opacity=0.0, depth=0.0, interpolate=True,btnnum = 6)
+print("after")
 newButtonPosition(0,[])
 if helpdebug:
     print("buttons created?")
@@ -876,6 +978,7 @@ while continueRoutine:
         buttons = mouse.getPressed()
         if buttons != prevButtonState:  # button state changed?
             prevButtonState = buttons
+        
             if sum(buttons) > 0:  # state changed to a new click
                 # check if the mouse was inside our 'clickable' objects
                 gotValidClick = False
@@ -1050,6 +1153,7 @@ for thisPhaseSelector in PhaseSelector:
                 prevButtonState = buttons
                 if sum(buttons) > 0:  # state changed to a new click
                     # check if the mouse was inside our 'clickable' objects
+                    MouseClicked(AnyClickTracker, False)
                     gotValidClidck = False
                     clickableList = environmenttools.getFromNames([BreakButton], namespace=locals())
                     clickableList.extend(buttonlist)
@@ -1067,7 +1171,7 @@ for thisPhaseSelector in PhaseSelector:
                                 if BreakClick() == True:
                                     continueRoutine = False
                             elif PhaseName != "Break" and obj != BreakButton and ClickTimer.getTime() > 0.3:
-                                MouseClicked(obj)
+                                MouseClicked(obj, True)
                             #This happens if the red butotn is clicked during assesmnet phsa
                     # check whether click was in correct object
                     if gotValidClick:
@@ -1134,13 +1238,16 @@ for thisPhaseSelector in PhaseSelector:
             
             if BackgroundColor is None:
                 win.color = [0,0,0]
-                if PointTimer.getTime() < 0.8:
-                    PointsBox.setFillColor([0.0000, 0.9059, 0.0000], log=False)
+                if PointBoxTimer.getTime() < 0.8:
+                    if gainorlose == True: 
+                        PointsBox.setFillColor([0.0000, 0.9059, 0.0000], log=False)
+                    elif gainorlose == False:
+                        PointsBox.setFillColor([0.9059, 0.0000, 0.0000], log=False)
                 else:
                     PointsBox.setFillColor([0.0000,0.0000,0.0000], log=False)
             else:
                 win.color = BackgroundColor
-                if PointTimer.getTime() < 0.8:
+                if PointBoxTimer.getTime() < 0.8:
                     PointsBox.setFillColor([0.0000, 0.9059, 0.0000], log=False)
                 else:
                     PointsBox.setFillColor(BackgroundColor, log=False)
@@ -1167,7 +1274,7 @@ for thisPhaseSelector in PhaseSelector:
         # *BreakTxt* updates
         
         # if BreakTxt is starting this frame...
-        if BreakTxt.status == NOT_STARTED and PhaseName == "Break":
+        if BreakTxt.status == NOT_STARTED and (PhaseName == "Break" or PhaseName == "Instructions"):
             # keep track of start time/frame for later
             BreakTxt.frameNStart = frameN  # exact frame index
             BreakTxt.tStart = t  # local t and not account for scr refresh
@@ -1183,7 +1290,7 @@ for thisPhaseSelector in PhaseSelector:
         if BreakTxt.status == STARTED:
             # update params
            
-            if Duration > PhaseTimer.getTime(): 
+            if Duration > PhaseTimer.getTime() and PhaseName == "Break": 
                 if Skippable_BreakTF == True:
                     BreakTxt.text='hey you can take a break now! You have ' + str(round(Duration - PhaseTimer.getTime())) + ' seconds left in your break, \n however you can click the button to end it early \n'
                     ssstring = "s"
@@ -1193,7 +1300,7 @@ for thisPhaseSelector in PhaseSelector:
                 elif Skippable_BreakTF == False:
                     BreakTxt.text='Hey you can take a break now! You have ' + str(round(Duration - PhaseTimer.getTime())) + ' seconds left in your break.'
             
-            elif Duration < PhaseTimer.getTime():
+            elif Duration < PhaseTimer.getTime() and PhaseName == "Break":
                 BreakTxt.text = 'Click the button to continue'
 
 

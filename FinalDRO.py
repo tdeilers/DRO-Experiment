@@ -245,7 +245,7 @@ def EachFrameChecker():
     PTime = PhaseTimer.getTime()
     
     #manages the color of the point box, canges it back to grey after 0.8 seconds.
-    i
+    
     if PointBoxTimer.getTime() > 0.8:
         global PointBoxColor
         PointBoxColor = 0
@@ -1020,6 +1020,7 @@ while continueRoutine:
     if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
         win.flip()
 print("initalize ending")
+
 # --- Ending Routine "Initalize" ---
 for thisComponent in InitalizeComponents:
     if hasattr(thisComponent, "setAutoDraw"):
@@ -1027,6 +1028,7 @@ for thisComponent in InitalizeComponents:
 # Run 'End Routine' code from code
 ResetAllDROTimers()
 ResetRunTimer()
+
 #Not at all sure what run time is, or if its ever used, leaving in for now becuase why not
 
 # store data for thisExp (ExperimentHandler)
@@ -1038,6 +1040,7 @@ thisExp.addData('mouse.rightButton', mouse.rightButton)
 thisExp.addData('mouse.time', mouse.time)
 thisExp.addData('mouse.clicked_name', mouse.clicked_name)
 thisExp.nextEntry()
+
 # the Routine "Initalize" was not non-slip safe, so reset the non-slip timer
 routineTimer.reset()
 
@@ -1136,6 +1139,7 @@ for thisPhaseSelector in PhaseSelector:
         # *DROMouse* updates
         
         # if DROMouse is starting this frame...R
+        print("did we get here1")
         if DROMouse.status == NOT_STARTED and t >= 0-frameTolerance:
             # keep track of start time/frame for later
             DROMouse.frameNStart = frameN  # exact frame index
@@ -1202,14 +1206,16 @@ for thisPhaseSelector in PhaseSelector:
         #This part of the code make my brian go ??? what goin on here, trying to make it so that you can't drag
         
         #So this is what is being called every frame, meaning that these are two of the three ways in which events happen. 
+        print("did we get here2")
         if type(Duration) is int:
             #Routine ender is structured this way because the changing of the value "continueRoutine" only works while the code
             #is physically located in the routine that must end. Basically, when you call RoutineEnder() it returns true or false based on if the duration has been passed.
             if RoutineEnder():
-            
+                
                 continueRoutine = False
         else:
             continueRoutine = False
+        print("did we call each frame?")
         EachFrameChecker()
      
         
@@ -1252,7 +1258,7 @@ for thisPhaseSelector in PhaseSelector:
                 else:
                     PointsBox.setFillColor(BackgroundColor, log=False)
         # *DROPoints* updates
-        
+        print("did we get here3")
         # if DROPoints is starting this frame...
         if DROPoints.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
             # keep track of start time/frame for later
@@ -1324,7 +1330,7 @@ for thisPhaseSelector in PhaseSelector:
         if BreakButton.status == STARTED:
             # update params
             pass
-        
+        print("did we get here4")
         # check for quit (typically the Esc key)
         if (defaultKeyboard.getKeys(keyList=["escape"]) and defaultKeyboard.getKeys(keyList=["right"])) or endExpNow:
             print("experiment ended by user, pressing escape + right arrow")
@@ -1364,7 +1370,7 @@ for thisPhaseSelector in PhaseSelector:
     thisExp.nextEntry()
     
 # completed 1.0 repeats of 'PhaseSelector'
-
+print("did we get here5")
 # get names of stimulus parameters
 if PhaseSelector.trialList in ([], [None], None):
     params = []

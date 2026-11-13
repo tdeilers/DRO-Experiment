@@ -812,7 +812,7 @@ defaultKeyboard = keyboard.Keyboard(backend='iohub')
 
 # --- Initialize components for Routine "Initalize" ---
 text = visual.TextStim(win=win, name='text',
-    text='Your goal is to earn as many points as possible. How you earn points may change throughout the experiment. All your points will be visible at the top of the screen.  You will be given a 1-min break about every 10 minutes, and a 10-minute break halfway through (after about 40 min). You are competing with other people for the most points; the top three point-earners in the study will be awarded money. Do your best to earn the most points!',
+    text='Thank you for participating in this experiment. Please engage with the screen using the mousepad.',
     font='Open Sans', 
     pos=(0, 0), height=0.05, wrapWidth=None, ori=0.0, 
     color='white', colorSpace='rgb', opacity=None, 
